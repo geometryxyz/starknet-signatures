@@ -45,6 +45,13 @@ mod tests {
     use starknet_curve::Fr;
     use ark_std::UniformRand;
     use ark_ec::ProjectiveCurve;
+    use ark_ff::Fp256;
+
+    use starknet::{
+        core::{types::{InvokeFunctionTransactionRequest, BlockId}},
+        providers::{SequencerGatewayProvider, Provider},
+        core::{types::FieldElement, utils::get_selector_from_name},
+    };
 
     #[test]
     fn random_signature() {
@@ -61,5 +68,24 @@ mod tests {
         println!("public key y: {}", public_key.y);
         println!("sig r: {}", sig.r);
         println!("sig s: {}", sig.s);
+
+        let sig_verification_contract_address = FieldElement::from_hex_be(
+            "07b1f0242f3a45fa81a9192d503b8a203fc3e8579c4a43517cfdc551a618b663",
+        )
+        .unwrap();
+
+        let msg_hash_fe = FieldElement::from_dec_str(msg_hash.to_string().as_str()).unwrap();
+        let public_key_fe = FieldElement::from_dec_str(public_key.to_string().as_str()).unwrap();
+        let sig_r_fe = FieldElement::from_dec_str(sig.r.to_string().as_str()).unwrap();
+        let sig_s_fe = FieldElement::from_dec_str(sig.s.to_string().as_str()).unwrap();
+
+        let provider = SequencerGatewayProvider::starknet_alpha_goerli();
+        let call = provider.call_contract(InvokeFunctionTransactionRequest {
+                contract_address: sig_verification_contract_address,
+                calldata: vec![msg_hash_fe, public_key_fe, sig_r_fe, sig_s_fe],
+                entry_point_selector: get_selector_from_name("verify_sig").unwrap(),
+                max_fee: FieldElement::from_dec_str("0").unwrap(),
+                signature: vec![]}
+            ,BlockId::Latest);
     }
 }

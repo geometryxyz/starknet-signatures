@@ -10,7 +10,7 @@ from starkware.cairo.common.signature import (
 )
 from starkware.cairo.common.uint256 import Uint256
 
-@external
+@view
 func verify_sig{
     syscall_ptr : felt*,
     pedersen_ptr : HashBuiltin*,

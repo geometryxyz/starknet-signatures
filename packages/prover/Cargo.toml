@@ -14,3 +14,4 @@ proof-essentials = { git = "ssh://git@github.com/geometryresearch/proof-toolbox.
 starknet-curve = { git = "ssh://git@github.com/geometryresearch/proof-toolbox.git" }
 rand = "0.8.4"
 thiserror = "1.0.30"
+starknet = "0.2.0"

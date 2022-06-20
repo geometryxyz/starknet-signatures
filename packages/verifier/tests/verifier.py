@@ -3,6 +3,8 @@ import asyncio
 from typing import NamedTuple
 from starkware.starknet.testing.contract import StarknetContract
 from starkware.starknet.testing.starknet import Starknet
+from nile.signer import Signer
+
 
 class TestsDeps(NamedTuple):
     starknet: Starknet
@@ -23,4 +25,10 @@ async def factory():
 
 @pytest.mark.asyncio
 async def test_verifier(factory):
-    starknet, concat = factory
+    starknet, verifier = factory
+
+    signer = Signer(0xbeef)
+    msg = 0xdead
+
+    (sig_r, sig_s) = signer.sign(msg)
+    await verifier.verify_sig(msg, signer.public_key, (sig_r, sig_s)).call()
