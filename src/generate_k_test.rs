@@ -28,7 +28,7 @@ mod tests {
         );
     }
 
-    pub fn generate_h_with_shifting() -> Zeroizing<U256> {
+    pub fn generate_k_with_shifting() -> Zeroizing<U256> {
         let ec_order =
             U256::from_be_hex("0800000000000010ffffffffffffffffb781126dcae7b2321e66a241adc64d2f");
         let key =
@@ -55,8 +55,8 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_h_with_shifting() {
-        let k = generate_h_with_shifting();
+    fn test_generate_k_with_shifting() {
+        let k = generate_k_with_shifting();
 
         let k = U256::from_be_byte_array(k.to_be_byte_array());
         assert_eq!(
