@@ -4,6 +4,8 @@ use ark_std::UniformRand;
 use rand::thread_rng;
 use starknet_curve::{Fr, Projective};
 
+mod generate_k_test;
+
 pub struct SigningParameters {
     pub generator: Projective,
 }
