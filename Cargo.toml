@@ -19,3 +19,5 @@ crypto-bigint = { version = "0.4.7", features = ["generic-array"] }
 hmac = "0.12.1"
 rfc6979 = "0.2.0"
 sha2 = "0.10.2"
+lazy_static = "1.4.0"
+generic-array = "0.14.5"
