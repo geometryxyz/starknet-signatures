@@ -2027,7 +2027,7 @@ CONSTANT_POINTS = [
 
 FIELD_PRIME = 3618502788666131213697322783095070105623107215331596699973092056135872020481
 N_ELEMENT_BITS_HASH = FIELD_PRIME.bit_length()
-print(N_ELEMENT_BITS_HASH)
+# print(N_ELEMENT_BITS_HASH)
 
 SHIFT_POINT = CONSTANT_POINTS[0]
 
@@ -2039,8 +2039,27 @@ P_1 = CONSTANT_POINTS[2 + LOW_PART_BITS]
 P_2 = CONSTANT_POINTS[2 + N_ELEMENT_BITS_HASH]
 P_3 = CONSTANT_POINTS[2 + N_ELEMENT_BITS_HASH + LOW_PART_BITS]
 
-print(HASH_SHIFT_POINT)
-print(P_0)
-print(P_1)
-print(P_2)
-print(P_3)
+# print(HASH_SHIFT_POINT)
+# print(P_0)
+# print(P_1)
+# print(P_2)
+# print(P_3)
+
+
+import functools
+
+def pedersen_hash(x, y):
+    return x + y
+
+def compute_hash_on_elements(data, hash_func=pedersen_hash):
+    """
+    Computes a hash chain over the data, in the following order:
+        h(h(h(h(0, data[0]), data[1]), ...), data[n-1]), n).
+    The hash is initialized with 0 and ends with the data length appended.
+    The length is appended in order to avoid collisions of the following kind:
+    H([x,y,z]) = h(h(x,y),z) = H([w, z]) where w = h(x,y).
+    """
+    return functools.reduce(lambda x, y: hash_func(x, y), [*data, len(data)], 0)
+
+
+print(compute_hash_on_elements([1, 2, 3]))

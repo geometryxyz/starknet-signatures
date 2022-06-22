@@ -16,8 +16,9 @@ rand = "0.8.4"
 thiserror = "1.0.30"
 zeroize = "1.5.5"
 crypto-bigint = { version = "0.4.7", features = ["generic-array"] }
-hmac = "0.12.1"
+hmac = { version = "0.12.1" }
 rfc6979 = "0.2.0"
 sha2 = "0.10.2"
 lazy_static = "1.4.0"
 generic-array = "0.14.5"
+digest = { version = "0.10.3", features = ["core-api"] } 

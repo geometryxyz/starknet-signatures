@@ -1,11 +1,10 @@
+use crate::rfc6979::generate_k_rfc6979;
+
 use ark_ec::{AffineCurve, ProjectiveCurve};
 use ark_ff::{BigInteger, BigInteger256, Field, FpParameters, One, PrimeField, Zero};
 use ark_std::UniformRand;
-use crypto_bigint::{subtle::ConstantTimeLess, ArrayEncoding, ByteArray, Zero as BigIntZero, U256};
 use rand::thread_rng;
 use starknet_curve::{Affine, Fr, Projective};
-
-use crate::rfc::generate_k_rfc6979_arkworks;
 
 pub struct SigningParameters {
     pub generator: Projective,
@@ -46,7 +45,7 @@ pub fn sign(
 
     loop {
         // replace with rfc6979 as in https://github.com/starkware-libs/cairo-lang/blob/167b28bcd940fd25ea3816204fa882a0b0a49603/src/starkware/crypto/starkware/crypto/signature/signature.py#L145
-        let k = generate_k_rfc6979_arkworks(
+        let k = generate_k_rfc6979(
             &starknet_curve::FqParameters::MODULUS,
             &priv_key,
             &msg_hash,
@@ -100,35 +99,36 @@ pub fn private_key_to_public_key(parameters: &SigningParameters, priv_key: Fr) -
     parameters.generator.mul(priv_key.into_repr())
 }
 
-pub fn verify_signature(
-    parameters: &SigningParameters,
-    pub_key: &Affine,
-    msg_hash: &Fr,
-    signature: &Signature,
-) -> bool {
-    let gen = parameters.generator;
-
-    let r = signature.r;
-    let s = signature.s;
-    // # Compute w = s^-1 (mod EC_ORDER).
-    let w = s.inverse().unwrap();
-
-    let point = gen.mul((*msg_hash * w).into_repr()).into_affine()
-        + pub_key.mul((r * w).into_repr()).into_affine();
-
-    let x = Fr::from_repr(point.x.into_repr()).unwrap();
-
-    x == r
-}
-
 #[cfg(test)]
 mod tests {
 
-    use super::{parameters, private_key_to_public_key, sign, verify_signature};
-    use ark_ec::ProjectiveCurve;
+    use super::{parameters, private_key_to_public_key, sign, Signature, SigningParameters};
+    use ark_ec::{AffineCurve, ProjectiveCurve};
+    use ark_ff::{Field, PrimeField};
     use ark_std::UniformRand;
     use rand::thread_rng;
-    use starknet_curve::Fr;
+    use starknet_curve::{Affine, Fr};
+
+    pub fn verify_signature(
+        parameters: &SigningParameters,
+        pub_key: &Affine,
+        msg_hash: &Fr,
+        signature: &Signature,
+    ) -> bool {
+        let gen = parameters.generator;
+
+        let r = signature.r;
+        let s = signature.s;
+        // # Compute w = s^-1 (mod EC_ORDER).
+        let w = s.inverse().unwrap();
+
+        let point = gen.mul((*msg_hash * w).into_repr()).into_affine()
+            + pub_key.mul((r * w).into_repr()).into_affine();
+
+        let x = Fr::from_repr(point.x.into_repr()).unwrap();
+
+        x == r
+    }
 
     #[test]
     fn random_signature() {

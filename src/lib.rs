@@ -4,5 +4,8 @@ extern crate lazy_static;
 mod constants;
 mod error;
 mod pedersen;
-mod rfc;
+mod rfc6979;
 mod signature;
+
+// sign
+// private to public key

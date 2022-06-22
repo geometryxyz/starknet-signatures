@@ -3,10 +3,10 @@ use crate::error::Error;
 
 use ark_ec::{AffineCurve, ProjectiveCurve};
 use ark_ff::PrimeField;
-use ark_ff::{BigInteger, BigInteger256};
+use ark_ff::{BigInteger, BigInteger256, Zero};
 use starknet_curve::{Affine, Fr};
 
-pub struct Constants {
+struct Constants {
     // bits
     pub low_part_bits: u32,
     pub low_part_mask: BigInteger256,
@@ -58,13 +58,14 @@ fn process_single_element(element: Fr, p1: Affine, p2: Affine) -> Affine {
 /// shift_point + x_low * P_0 + x_high * P1 + y_low * P2  + y_high * P3
 /// where x_low is the 248 low bits of x, x_high is the 4 high bits of x and similarly for y.
 /// shift_point, P_0, P_1, P_2, P_3 are constant points generated from the digits of pi.
-pub fn pedersen_hash(x: &Fr, y: &Fr) -> Result<Fr, Error> {
+fn pedersen_hash(x: &Fr, y: &Fr) -> Result<Fr, Error> {
     let pedersen_point = CONSTANTS.hash_shift_point
         + process_single_element(*x, CONSTANTS.p0, CONSTANTS.p1)
         + process_single_element(*y, CONSTANTS.p2, CONSTANTS.p3);
 
     let pedersen_hash = pedersen_point.x.into_repr();
 
+    // this is negligable
     if pedersen_hash > TWO_MODULUS_BITS {
         return Err(Error::HashError);
     }
@@ -73,15 +74,51 @@ pub fn pedersen_hash(x: &Fr, y: &Fr) -> Result<Fr, Error> {
     Ok(pedersen_hash)
 }
 
+///     Computes a hash chain over the data, in the following order:
+///         h(h(h(h(0, data[0]), data[1]), ...), data[n-1]), n).
+///     The hash is initialized with 0 and ends with the data length appended.
+///     The length is appended in order to avoid collisions of the following kind:
+///     H([x,y,z]) = h(h(x,y),z) = H([w, z]) where w = h(x,y).
+fn compute_hash_on_elements(data: &Vec<Fr>) -> Result<Fr, Error> {
+    if data.len() == 0 {
+        return Err(Error::EmptyData);
+    }
+
+    let mut acc = Fr::zero();
+    let data_len = Fr::from(data.len() as u64);
+    for y in data.iter().chain(std::iter::once(&data_len)) {
+        acc = pedersen_hash(&acc, y)?;
+    }
+
+    Ok(acc)
+}
+
+pub fn unsafe_hash_to_field(data: Vec<u8>) -> Result<Fr, Error> {
+    if data.len() == 0 {
+        return Err(Error::EmptyData);
+    }
+
+    let zeroes = vec![0u8; data.len() % 31];
+    let extended_data = data
+        .into_iter()
+        .chain(zeroes.into_iter())
+        .collect::<Vec<u8>>();
+
+    let chunks = extended_data.chunks(31);
+
+    let elements: Vec<Fr> = chunks.map(|c| Fr::from_be_bytes_mod_order(c)).collect();
+    compute_hash_on_elements(&elements)
+}
+
 #[cfg(test)]
 mod tests {
-    use super::pedersen_hash;
+    use super::{compute_hash_on_elements, pedersen_hash, unsafe_hash_to_field};
     use ark_ff::field_new;
     use starknet_curve::Fr;
 
     #[test]
     fn test_pedersen_with_cairo() {
-        // CAIRO: predesen_hash(17, 71) -> 1785999660572583615240258164082465668299482253941125073628479392605449162275
+        // CAIRO: pedersen_hash(17, 71) -> 1785999660572583615240258164082465668299482253941125073628479392605449162275
 
         let seventeen = Fr::from(17u64);
         let seventy_one = Fr::from(71u64);
@@ -93,5 +130,35 @@ mod tests {
 
         let pedersen_h = pedersen_hash(&seventeen, &seventy_one).unwrap();
         assert_eq!(expected, pedersen_h)
+    }
+
+    #[test]
+    fn test_hash_on_long_data() {
+        let data = vec![
+            Fr::from(2u64),
+            Fr::from(4u64),
+            Fr::from(8u64),
+            Fr::from(16u64),
+            Fr::from(32u64),
+        ];
+
+        let expected = field_new!(
+            Fr,
+            "2811736568068244484902543134224269103996353337662770485859146392457932405098"
+        );
+
+        let pedersen_h = compute_hash_on_elements(&data).unwrap();
+        assert_eq!(expected, pedersen_h)
+    }
+
+    #[test]
+    fn test_hash_to_field() {
+        let message = b"Hello Marcello! This is a long message from the Rust people. We wrote this unsafe hash to field and would like you to try implementing the same function in Cairo. If we get the same hash, we can then move on to publishing our demo :)";
+        
+        let hashed = unsafe_hash_to_field(message.to_vec()).unwrap();
+
+        println!("{}", hashed);
+        // 0137CDA31B74DFE5457797E1033CE0BA5F7D8E29ADB7DA36D7BDBEF252F31227
+
     }
 }
