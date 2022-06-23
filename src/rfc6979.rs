@@ -1,10 +1,9 @@
 use ark_ff::{BigInteger, PrimeField};
-use crypto_bigint::Integer;
 use crypto_bigint::{subtle::ConstantTimeLess, ArrayEncoding, ByteArray, Zero as BigIntZero, U256};
 use generic_array::GenericArray;
 use rfc6979::HmacDrbg;
 use sha2::Sha256;
-use zeroize::{Zeroize, Zeroizing};
+use zeroize::{Zeroize};
 
 pub fn generate_k_rfc6979<B: BigInteger, F: PrimeField>(
     ec_order: &B,
@@ -50,12 +49,11 @@ pub fn generate_k_rfc6979<B: BigInteger, F: PrimeField>(
 #[cfg(test)]
 mod tests {
     use super::generate_k_rfc6979;
-    use ark_ff::{field_new, BigInteger, BigInteger256, FpParameters, PrimeField};
+    use ark_ff::{BigInteger256, FpParameters, PrimeField};
     use crypto_bigint::{ArrayEncoding, U256};
-    use rfc6979::{generate_k, HmacDrbg};
+    use rfc6979::{generate_k};
     use sha2::Sha256;
     use starknet_curve::Fr;
-    use zeroize::{Zeroize, Zeroizing};
 
     #[test]
     pub fn test_k_without_shifting() {

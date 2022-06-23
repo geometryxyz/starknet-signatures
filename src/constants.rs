@@ -53,11 +53,11 @@ pub const P3_STATIC_Y: Fq = field_new!(
     "776496453633298175483985398648758586525933812536653089401905292063708816422"
 );
 
-pub const LOW_BITS_MASK: BigInteger256 = BigInteger256::new([
-    0xffffffffffffffff,
-    0xffffffffffffffff,
-    0xffffffffffffffff,
-    0x00ffffffffffffff,
-]);
+// pub const LOW_BITS_MASK: BigInteger256 = BigInteger256::new([
+//     0xffffffffffffffff,
+//     0xffffffffffffffff,
+//     0xffffffffffffffff,
+//     0x00ffffffffffffff,
+// ]);
 
 pub const LOW_PART_BITS: u32 = 248;

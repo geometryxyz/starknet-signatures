@@ -3,13 +3,12 @@ use crate::error::Error;
 
 use ark_ec::{AffineCurve, ProjectiveCurve};
 use ark_ff::PrimeField;
-use ark_ff::{BigInteger, BigInteger256, Zero};
+use ark_ff::{BigInteger, Zero};
 use starknet_curve::{Affine, Fr};
 
 struct Constants {
     // bits
     pub low_part_bits: u32,
-    pub low_part_mask: BigInteger256,
 
     // points
     pub hash_shift_point: Affine,
@@ -29,7 +28,6 @@ lazy_static! {
     static ref CONSTANTS: Constants = Constants {
         // bits
         low_part_bits: LOW_PART_BITS,
-        low_part_mask: LOW_BITS_MASK,
         // points
         hash_shift_point: *HASH_SHIFT_POINT,
         p0: *P0_STATIC,
@@ -74,11 +72,11 @@ fn pedersen_hash(x: &Fr, y: &Fr) -> Result<Fr, Error> {
     Ok(pedersen_hash)
 }
 
-///     Computes a hash chain over the data, in the following order:
-///         h(h(h(h(0, data[0]), data[1]), ...), data[n-1]), n).
-///     The hash is initialized with 0 and ends with the data length appended.
-///     The length is appended in order to avoid collisions of the following kind:
-///     H([x,y,z]) = h(h(x,y),z) = H([w, z]) where w = h(x,y).
+/// Computes a hash chain over the data, in the following order:
+///     h(h(h(h(0, data[0]), data[1]), ...), data[n-1]), n).
+/// The hash is initialized with 0 and ends with the data length appended.
+/// The length is appended in order to avoid collisions of the following kind:
+/// H([x,y,z]) = h(h(x,y),z) = H([w, z]) where w = h(x,y).
 fn compute_hash_on_elements(data: &Vec<Fr>) -> Result<Fr, Error> {
     if data.len() == 0 {
         return Err(Error::EmptyData);
@@ -98,15 +96,10 @@ pub fn unsafe_hash_to_field(data: Vec<u8>) -> Result<Fr, Error> {
         return Err(Error::EmptyData);
     }
 
-    let zeroes = vec![0u8; data.len() % 31];
-    let extended_data = data
-        .into_iter()
-        .chain(zeroes.into_iter())
-        .collect::<Vec<u8>>();
+    let chunks = data.chunks(31);
 
-    let chunks = extended_data.chunks(31);
-
-    let elements: Vec<Fr> = chunks.map(|c| Fr::from_be_bytes_mod_order(c)).collect();
+    let mut elements: Vec<Fr> = chunks.map(|c| Fr::from_be_bytes_mod_order(c)).collect();
+    elements.push(Fr::from(8 * data.len() as u64));
     compute_hash_on_elements(&elements)
 }
 
@@ -158,7 +151,6 @@ mod tests {
         let hashed = unsafe_hash_to_field(message.to_vec()).unwrap();
 
         println!("{}", hashed);
-        // 0137CDA31B74DFE5457797E1033CE0BA5F7D8E29ADB7DA36D7BDBEF252F31227
-
+        // 04828D901704C8D1B6A82F1C256BE2B95C55A8FAA4309CAAF37A3378434AFF1C
     }
 }

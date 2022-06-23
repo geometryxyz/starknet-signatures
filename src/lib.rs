@@ -6,6 +6,3 @@ mod error;
 mod pedersen;
 mod rfc6979;
 mod signature;
-
-// sign
-// private to public key

@@ -1,10 +1,8 @@
 use crate::rfc6979::generate_k_rfc6979;
 
-use ark_ec::{AffineCurve, ProjectiveCurve};
-use ark_ff::{BigInteger, BigInteger256, Field, FpParameters, One, PrimeField, Zero};
-use ark_std::UniformRand;
-use rand::thread_rng;
-use starknet_curve::{Affine, Fr, Projective};
+use ark_ec::{ProjectiveCurve};
+use ark_ff::{BigInteger256, Field, FpParameters, One, PrimeField, Zero};
+use starknet_curve::{Fr, Projective};
 
 pub struct SigningParameters {
     pub generator: Projective,
@@ -43,6 +41,7 @@ pub fn sign(
         return None;
     }
 
+    let mut seed = seed;
     loop {
         // replace with rfc6979 as in https://github.com/starkware-libs/cairo-lang/blob/167b28bcd940fd25ea3816204fa882a0b0a49603/src/starkware/crypto/starkware/crypto/signature/signature.py#L145
         let k = generate_k_rfc6979(
@@ -51,12 +50,12 @@ pub fn sign(
             &msg_hash,
             seed,
         );
-
-        let seed = match seed {
+        
+        seed = match seed {
             Some(seed) => Some(seed + 1),
             None => Some(1),
         };
-
+        
         let unchecked_r = parameters
             .generator
             .mul(k.into_repr())
