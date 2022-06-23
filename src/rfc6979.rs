@@ -3,7 +3,7 @@ use crypto_bigint::{subtle::ConstantTimeLess, ArrayEncoding, ByteArray, Zero as 
 use generic_array::GenericArray;
 use rfc6979::HmacDrbg;
 use sha2::Sha256;
-use zeroize::{Zeroize};
+use zeroize::Zeroize;
 
 pub fn generate_k_rfc6979<B: BigInteger, F: PrimeField>(
     ec_order: &B,
@@ -51,7 +51,7 @@ mod tests {
     use super::generate_k_rfc6979;
     use ark_ff::{BigInteger256, FpParameters, PrimeField};
     use crypto_bigint::{ArrayEncoding, U256};
-    use rfc6979::{generate_k};
+    use rfc6979::generate_k;
     use sha2::Sha256;
     use starknet_curve::Fr;
 

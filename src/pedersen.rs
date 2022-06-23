@@ -91,7 +91,7 @@ fn compute_hash_on_elements(data: &Vec<Fr>) -> Result<Fr, Error> {
     Ok(acc)
 }
 
-pub fn unsafe_hash_to_field(data: Vec<u8>) -> Result<Fr, Error> {
+pub fn unsafe_hash_to_field(data: &[u8]) -> Result<Fr, Error> {
     if data.len() == 0 {
         return Err(Error::EmptyData);
     }
@@ -147,8 +147,8 @@ mod tests {
     #[test]
     fn test_hash_to_field() {
         let message = b"Hello Marcello! This is a long message from the Rust people. We wrote this unsafe hash to field and would like you to try implementing the same function in Cairo. If we get the same hash, we can then move on to publishing our demo :)";
-        
-        let hashed = unsafe_hash_to_field(message.to_vec()).unwrap();
+
+        let hashed = unsafe_hash_to_field(message).unwrap();
 
         println!("{}", hashed);
         // 04828D901704C8D1B6A82F1C256BE2B95C55A8FAA4309CAAF37A3378434AFF1C
