@@ -11,6 +11,7 @@ from starkware.cairo.common.signature import (
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.hash_state import hash_felts
 
+
 @view
 func verify_sig{
     syscall_ptr : felt*,
@@ -27,3 +28,4 @@ func verify_sig{
     )
     return ()
 end
+
