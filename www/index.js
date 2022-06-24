@@ -4,6 +4,13 @@ import { bufToBigint } from 'bigint-conversion'
 const starknet = new StarknetModule(); 
 
 const private_key = Uint8Array.from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5])
+
+try { 
+    starknet.get_private_key()
+} catch(err) { 
+    console.log('Err: ', err)
+}
+
 starknet.load_sk(private_key)
 console.log('private key: ', bufToBigint(starknet.get_private_key()))
 
