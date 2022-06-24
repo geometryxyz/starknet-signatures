@@ -101,10 +101,18 @@ pub fn private_key_to_public_key(parameters: &SigningParameters, priv_key: Fr) -
 #[cfg(test)]
 mod tests {
     use super::{parameters, private_key_to_public_key, sign, Signature, SigningParameters};
+    use crate::pedersen::compute_hash_on_elements;
     use ark_ec::{AffineCurve, ProjectiveCurve};
-    use ark_ff::{Field, PrimeField};
+    use ark_ff::{field_new, Field, PrimeField, BigInteger, BigInteger256};
     use ark_std::UniformRand;
     use rand::thread_rng;
+    use starknet::{
+        core::{
+            types::{BlockId, InvokeFunctionTransactionRequest, FieldElement},
+            utils::get_selector_from_name,
+        },
+        providers::{SequencerGatewayProvider, Provider},
+    };
     use starknet_curve::{Affine, Fr};
 
     pub fn verify_signature(
@@ -135,7 +143,15 @@ mod tests {
 
         let private_key = Fr::rand(rng);
         let public_key = private_key_to_public_key(&parameters, private_key).into_affine();
-        let msg_hash = Fr::rand(rng);
+
+        let msg = vec![
+            Fr::from(1u64),
+            Fr::from(2u64),
+            Fr::from(3u64),
+            Fr::from(4u64),
+            Fr::from(5u64),
+        ];
+        let msg_hash = compute_hash_on_elements(&msg).unwrap();
 
         let sig = sign(&parameters, private_key, msg_hash, None).expect("Message is out of bound");
         println!("msg_hash: {}", msg_hash);
@@ -147,6 +163,45 @@ mod tests {
         assert_eq!(
             true,
             verify_signature(&parameters, &public_key, &msg_hash, &sig)
+        );
+
+        let sig_verification_contract_address = FieldElement::from_hex_be(
+            "04b7e9f16515962136d9836af263840146214e8df1a6d841fed055b00d9d8df6",
         )
+        .unwrap();
+
+
+        let public_key_x = FieldElement::from_hex_be(public_key.x.0.to_string().as_str()).unwrap();
+        let sig_r_fe = FieldElement::from_hex_be(sig.r.0.to_string().as_str()).unwrap();
+        let sig_s_fe = FieldElement::from_hex_be(sig.s.0.to_string().as_str()).unwrap();
+
+        let calldata = vec![
+            //len of msg
+            FieldElement::from_mont([msg.len() as u64, 0, 0, 0]),
+            //msg elements
+            FieldElement::from_hex_be(msg[0].0.to_string().as_str()).unwrap(),
+            FieldElement::from_hex_be(msg[1].0.to_string().as_str()).unwrap(),
+            FieldElement::from_hex_be(msg[2].0.to_string().as_str()).unwrap(),
+            FieldElement::from_hex_be(msg[3].0.to_string().as_str()).unwrap(),
+            FieldElement::from_hex_be(msg[4].0.to_string().as_str()).unwrap(),
+            // public key x
+            public_key_x,
+            //r
+            sig_r_fe,
+            //s
+            sig_s_fe,
+        ];
+
+        let provider = SequencerGatewayProvider::starknet_alpha_goerli();
+        let call = provider.call_contract(
+            InvokeFunctionTransactionRequest {
+                contract_address: sig_verification_contract_address,
+                calldata,
+                entry_point_selector: get_selector_from_name("verify_sig").unwrap(),
+                max_fee: FieldElement::from_mont([0, 0, 0, 0]),
+                signature: vec![],
+            },
+            BlockId::Latest,
+        );
     }
 }

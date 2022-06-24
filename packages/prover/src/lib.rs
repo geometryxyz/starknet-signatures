@@ -11,6 +11,18 @@ use ark_ec::ProjectiveCurve;
 use ark_ff::{BigInteger, PrimeField};
 use js_sys::Uint8Array;
 use starknet_curve::Fr;
+// use rand::thread_rng;
+// use super::{sign, parameters, private_key_to_public_key};
+// use starknet_curve::Fr;
+// use ark_std::UniformRand;
+// use ark_ec::ProjectiveCurve;
+// use ark_ff::Fp256;
+
+// use starknet::{
+//     core::{types::{InvokeFunctionTransactionRequest, BlockId}},
+//     providers::{SequencerGatewayProvider, Provider},
+//     core::{types::FieldElement, utils::get_selector_from_name},
+// };
 
 use pedersen::unsafe_hash_to_field;
 use signature::{parameters, private_key_to_public_key, sign as starknet_sign};

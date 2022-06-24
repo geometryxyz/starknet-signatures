@@ -77,7 +77,7 @@ fn pedersen_hash(x: &Fr, y: &Fr) -> Result<Fr, Error> {
 /// The hash is initialized with 0 and ends with the data length appended.
 /// The length is appended in order to avoid collisions of the following kind:
 /// H([x,y,z]) = h(h(x,y),z) = H([w, z]) where w = h(x,y).
-fn compute_hash_on_elements(data: &Vec<Fr>) -> Result<Fr, Error> {
+pub fn compute_hash_on_elements(data: &Vec<Fr>) -> Result<Fr, Error> {
     if data.len() == 0 {
         return Err(Error::EmptyData);
     }
