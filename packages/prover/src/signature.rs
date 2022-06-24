@@ -1,7 +1,9 @@
-use crate::rfc6979::generate_k_rfc6979;
+use crate::{
+    rfc6979::generate_k_rfc6979,
+};
 
 use ark_ec::ProjectiveCurve;
-use ark_ff::{BigInteger256, Field, FpParameters, One, PrimeField, Zero};
+use ark_ff::{Field, FpParameters, One, PrimeField, Zero, field_new};
 use starknet_curve::{Fr, Projective};
 
 pub struct SigningParameters {
@@ -25,18 +27,13 @@ pub fn sign(
     msg_hash: Fr,
     seed: Option<u64>,
 ) -> Option<Signature> {
-    // Fr::MODULUS_BITS = 251, 2**251 = 3618502788666131106986593281521497120414687020801267626233049500247285301248
-    //                                = 0x0800000000000000000000000000000000000000000000000000000000000000
-    let two_pow_modulus_bits = Fr::from(BigInteger256::new([
-        0x0000000000000000,
-        0x0000000000000000,
-        0x0000000000000000,
-        0x0800000000000000,
-    ]));
+    // Fr::MODULUS_BITS = 251, 2**251 = 
+    let two_pow_modulus_bits = field_new!(Fr, "3618502788666131106986593281521497120414687020801267626233049500247285301248");
 
     // Note: msg_hash must be smaller than 2**N_ELEMENT_BITS_ECDSA.
     // Message whose hash is >= 2**N_ELEMENT_BITS_ECDSA cannot be signed.
     // This happens with a very small probability.
+    // https://github.com/starkware-libs/cairo-lang/blob/167b28bcd940fd25ea3816204fa882a0b0a49603/src/starkware/crypto/starkware/crypto/signature/signature.py#L136  
     if !(Fr::zero() <= msg_hash && msg_hash < two_pow_modulus_bits) {
         return None;
     }
@@ -103,15 +100,15 @@ mod tests {
     use super::{parameters, private_key_to_public_key, sign, Signature, SigningParameters};
     use crate::pedersen::compute_hash_on_elements;
     use ark_ec::{AffineCurve, ProjectiveCurve};
-    use ark_ff::{field_new, Field, PrimeField, BigInteger, BigInteger256};
+    use ark_ff::{Field, PrimeField};
     use ark_std::UniformRand;
     use rand::thread_rng;
     use starknet::{
         core::{
-            types::{BlockId, InvokeFunctionTransactionRequest, FieldElement},
+            types::{BlockId, FieldElement, InvokeFunctionTransactionRequest},
             utils::get_selector_from_name,
         },
-        providers::{SequencerGatewayProvider, Provider},
+        providers::{Provider, SequencerGatewayProvider},
     };
     use starknet_curve::{Affine, Fr};
 
@@ -154,11 +151,6 @@ mod tests {
         let msg_hash = compute_hash_on_elements(&msg).unwrap();
 
         let sig = sign(&parameters, private_key, msg_hash, None).expect("Message is out of bound");
-        println!("msg_hash: {}", msg_hash);
-        println!("public key x: {}", public_key.x);
-        println!("public key y: {}", public_key.y);
-        println!("sig r: {}", sig.r);
-        println!("sig s: {}", sig.s);
 
         assert_eq!(
             true,
@@ -169,7 +161,6 @@ mod tests {
             "04b7e9f16515962136d9836af263840146214e8df1a6d841fed055b00d9d8df6",
         )
         .unwrap();
-
 
         let public_key_x = FieldElement::from_hex_be(public_key.x.0.to_string().as_str()).unwrap();
         let sig_r_fe = FieldElement::from_hex_be(sig.r.0.to_string().as_str()).unwrap();
@@ -193,7 +184,7 @@ mod tests {
         ];
 
         let provider = SequencerGatewayProvider::starknet_alpha_goerli();
-        let call = provider.call_contract(
+        let _ = provider.call_contract(
             InvokeFunctionTransactionRequest {
                 contract_address: sig_verification_contract_address,
                 calldata,
