@@ -103,15 +103,15 @@ mod tests {
     use super::{parameters, private_key_to_public_key, sign, Signature, SigningParameters};
     use crate::pedersen::compute_hash_on_elements;
     use ark_ec::{AffineCurve, ProjectiveCurve};
-    use ark_ff::{field_new, Field, PrimeField, BigInteger, BigInteger256};
+    use ark_ff::{field_new, BigInteger, BigInteger256, Field, PrimeField};
     use ark_std::UniformRand;
     use rand::thread_rng;
     use starknet::{
         core::{
-            types::{BlockId, InvokeFunctionTransactionRequest, FieldElement},
+            types::{BlockId, FieldElement, InvokeFunctionTransactionRequest},
             utils::get_selector_from_name,
         },
-        providers::{SequencerGatewayProvider, Provider},
+        providers::{Provider, SequencerGatewayProvider},
     };
     use starknet_curve::{Affine, Fr};
 
@@ -169,7 +169,6 @@ mod tests {
             "04b7e9f16515962136d9836af263840146214e8df1a6d841fed055b00d9d8df6",
         )
         .unwrap();
-
 
         let public_key_x = FieldElement::from_hex_be(public_key.x.0.to_string().as_str()).unwrap();
         let sig_r_fe = FieldElement::from_hex_be(sig.r.0.to_string().as_str()).unwrap();
