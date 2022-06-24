@@ -1,9 +1,7 @@
-use crate::{
-    rfc6979::generate_k_rfc6979,
-};
+use crate::rfc6979::generate_k_rfc6979;
 
 use ark_ec::ProjectiveCurve;
-use ark_ff::{Field, FpParameters, One, PrimeField, Zero, field_new};
+use ark_ff::{field_new, Field, FpParameters, One, PrimeField, Zero};
 use starknet_curve::{Fr, Projective};
 
 pub struct SigningParameters {
@@ -27,13 +25,16 @@ pub fn sign(
     msg_hash: Fr,
     seed: Option<u64>,
 ) -> Option<Signature> {
-    // Fr::MODULUS_BITS = 251, 2**251 = 
-    let two_pow_modulus_bits = field_new!(Fr, "3618502788666131106986593281521497120414687020801267626233049500247285301248");
+    // Fr::MODULUS_BITS = 251, 2**251 =
+    let two_pow_modulus_bits = field_new!(
+        Fr,
+        "3618502788666131106986593281521497120414687020801267626233049500247285301248"
+    );
 
     // Note: msg_hash must be smaller than 2**N_ELEMENT_BITS_ECDSA.
     // Message whose hash is >= 2**N_ELEMENT_BITS_ECDSA cannot be signed.
     // This happens with a very small probability.
-    // https://github.com/starkware-libs/cairo-lang/blob/167b28bcd940fd25ea3816204fa882a0b0a49603/src/starkware/crypto/starkware/crypto/signature/signature.py#L136  
+    // https://github.com/starkware-libs/cairo-lang/blob/167b28bcd940fd25ea3816204fa882a0b0a49603/src/starkware/crypto/starkware/crypto/signature/signature.py#L136
     if !(Fr::zero() <= msg_hash && msg_hash < two_pow_modulus_bits) {
         return None;
     }

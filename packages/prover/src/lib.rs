@@ -101,8 +101,11 @@ impl StarknetModule {
         let pk_bytes = self.private_key.clone().ok_or("No private key provided")?;
         let private_key = Fr::from_be_bytes_mod_order(pk_bytes.as_slice());
 
-        let msg_hash = unsafe_hash_to_field(msg.as_bytes()).ok().ok_or("Hash failed")?;
-        let sig = starknet_sign(&parameters, private_key, msg_hash, None).ok_or("Message is out of bound")?;
+        let msg_hash = unsafe_hash_to_field(msg.as_bytes())
+            .ok()
+            .ok_or("Hash failed")?;
+        let sig = starknet_sign(&parameters, private_key, msg_hash, None)
+            .ok_or("Message is out of bound")?;
 
         Ok(Signature::new(
             sig.r.into_repr().to_bytes_le(),
@@ -118,8 +121,11 @@ impl StarknetModule {
         let parameters = parameters();
 
         let private_key = Fr::from_be_bytes_mod_order(private_key_bytes.as_slice());
-        let msg_hash = unsafe_hash_to_field(msg.as_bytes()).ok().ok_or("Hash failed")?;
-        let sig = starknet_sign(&parameters, private_key, msg_hash, None).ok_or("Message is out of bound")?;
+        let msg_hash = unsafe_hash_to_field(msg.as_bytes())
+            .ok()
+            .ok_or("Hash failed")?;
+        let sig = starknet_sign(&parameters, private_key, msg_hash, None)
+            .ok_or("Message is out of bound")?;
 
         Ok(Signature::new(
             sig.r.into_repr().to_bytes_le(),
