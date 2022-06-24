@@ -16,7 +16,6 @@ use pedersen::unsafe_hash_to_field;
 use signature::{parameters, private_key_to_public_key, sign as starknet_sign};
 use wasm_bindgen::prelude::*;
 
-
 #[wasm_bindgen]
 pub struct PublicKey {
     x: Vec<u8>,
@@ -111,7 +110,11 @@ impl StarknetModule {
         ))
     }
 
-    pub fn sign_with_external_sk(&self, private_key_bytes: Vec<u8>, msg: &str) -> Result<Signature, JsValue> {
+    pub fn sign_with_external_sk(
+        &self,
+        private_key_bytes: Vec<u8>,
+        msg: &str,
+    ) -> Result<Signature, JsValue> {
         let parameters = parameters();
 
         let private_key = Fr::from_be_bytes_mod_order(private_key_bytes.as_slice());
