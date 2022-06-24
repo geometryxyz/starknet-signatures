@@ -9,6 +9,7 @@ from starkware.cairo.common.signature import (
     verify_ecdsa_signature,
 )
 from starkware.cairo.common.uint256 import Uint256
+from starkware.cairo.common.hash_state import hash_felts
 
 @view
 func verify_sig{
@@ -16,7 +17,8 @@ func verify_sig{
     pedersen_ptr : HashBuiltin*,
     range_check_ptr,
     ecdsa_ptr : SignatureBuiltin*,
-}(msg_hash: felt, signer_pubkey: felt, sig : (felt, felt)):
+}(msg_len: felt, msg: felt*, signer_pubkey: felt, sig : (felt, felt)):
+    let (msg_hash) = hash_felts{hash_ptr=pedersen_ptr}(msg, msg_len)
     verify_ecdsa_signature(
         message=msg_hash,
         public_key=signer_pubkey,

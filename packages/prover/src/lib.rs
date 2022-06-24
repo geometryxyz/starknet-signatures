@@ -74,10 +74,10 @@ mod tests {
         )
         .unwrap();
 
-        let msg_hash_fe = FieldElement::from_dec_str(msg_hash.to_string().as_str()).unwrap();
-        let public_key_fe = FieldElement::from_dec_str(public_key.to_string().as_str()).unwrap();
-        let sig_r_fe = FieldElement::from_dec_str(sig.r.to_string().as_str()).unwrap();
-        let sig_s_fe = FieldElement::from_dec_str(sig.s.to_string().as_str()).unwrap();
+        let msg_hash_fe = FieldElement::from_hex_be(msg_hash.0.to_string().as_str()).unwrap();
+        let public_key_fe = FieldElement::from_hex_be(public_key.to_string().as_str()).unwrap();
+        let sig_r_fe = FieldElement::from_hex_be(sig.r.0.to_string().as_str()).unwrap();
+        let sig_s_fe = FieldElement::from_hex_be(sig.s.0.to_string().as_str()).unwrap();
 
         let provider = SequencerGatewayProvider::starknet_alpha_goerli();
         let call = provider.call_contract(InvokeFunctionTransactionRequest {
