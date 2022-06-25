@@ -30,7 +30,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: fmt
-          args: --all -- --check
+          args: --manifest-path packages/prover/Cargo.toml --all -- --check
 
   test:
     name: Test
@@ -58,7 +58,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --release --all --no-fail-fast
+          args: --manifest-path packages/prover/Cargo.toml --release --all --no-fail-fast
 
   build-wasm:
     name: Build non-native targets
@@ -89,4 +89,4 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --release --all --target ${{ matrix.target }}
+          args: --manifest-path packages/prover/Cargo.toml --release --all --target ${{ matrix.target }}
