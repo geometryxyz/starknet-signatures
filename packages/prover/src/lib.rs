@@ -11,18 +11,6 @@ use ark_ec::ProjectiveCurve;
 use ark_ff::{BigInteger, PrimeField};
 use js_sys::Uint8Array;
 use starknet_curve::Fr;
-// use rand::thread_rng;
-// use super::{sign, parameters, private_key_to_public_key};
-// use starknet_curve::Fr;
-// use ark_std::UniformRand;
-// use ark_ec::ProjectiveCurve;
-// use ark_ff::Fp256;
-
-// use starknet::{
-//     core::{types::{InvokeFunctionTransactionRequest, BlockId}},
-//     providers::{SequencerGatewayProvider, Provider},
-//     core::{types::FieldElement, utils::get_selector_from_name},
-// };
 
 use pedersen::unsafe_hash_to_field;
 use signature::{parameters, private_key_to_public_key, sign as starknet_sign};
@@ -89,12 +77,12 @@ impl StarknetModule {
     }
 
     pub fn get_private_key(&self) -> Result<Uint8Array, JsValue> {
-        let pk_bytes = self.private_key.clone().expect("No private key provided");
+        let pk_bytes = self.private_key.clone().ok_or("No private key provided")?;
         Ok(Uint8Array::from(&pk_bytes[..]))
     }
 
     pub fn get_public_key(&self) -> Result<PublicKey, JsValue> {
-        let pk_bytes = self.private_key.clone().expect("No private key provided");
+        let pk_bytes = self.private_key.clone().ok_or("No private key provided")?;
         let private_key = Fr::from_be_bytes_mod_order(pk_bytes.as_slice());
 
         let parameters = parameters();
@@ -106,15 +94,18 @@ impl StarknetModule {
         ))
     }
 
+    #[wasm_bindgen(catch)]
     pub fn sign(&self, msg: &str) -> Result<Signature, JsValue> {
         let parameters = parameters();
 
-        let pk_bytes = self.private_key.clone().expect("No private key provided");
+        let pk_bytes = self.private_key.clone().ok_or("No private key provided")?;
         let private_key = Fr::from_be_bytes_mod_order(pk_bytes.as_slice());
 
-        let msg_hash = unsafe_hash_to_field(msg.as_bytes()).expect("Hash failed");
+        let msg_hash = unsafe_hash_to_field(msg.as_bytes())
+            .ok()
+            .ok_or("Hash failed")?;
         let sig = starknet_sign(&parameters, private_key, msg_hash, None)
-            .expect("Message is out of bound");
+            .ok_or("Message is out of bound")?;
 
         Ok(Signature::new(
             sig.r.into_repr().to_bytes_le(),
@@ -130,9 +121,11 @@ impl StarknetModule {
         let parameters = parameters();
 
         let private_key = Fr::from_be_bytes_mod_order(private_key_bytes.as_slice());
-        let msg_hash = unsafe_hash_to_field(msg.as_bytes()).expect("Hash failed");
+        let msg_hash = unsafe_hash_to_field(msg.as_bytes())
+            .ok()
+            .ok_or("Hash failed")?;
         let sig = starknet_sign(&parameters, private_key, msg_hash, None)
-            .expect("Message is out of bound");
+            .ok_or("Message is out of bound")?;
 
         Ok(Signature::new(
             sig.r.into_repr().to_bytes_le(),
