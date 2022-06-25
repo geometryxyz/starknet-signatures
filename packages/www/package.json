@@ -28,7 +28,7 @@
   "homepage": "https://github.com/rustwasm/create-wasm-app#readme",
   "dependencies": {
     "bigint-conversion": "^2.2.1",
-    "starknet-signature": "file:../packages/prover/pkg"
+    "starknet-signature": "file:../prover/pkg"
   },
   "devDependencies": {
     "copy-webpack-plugin": "^5.0.0",
