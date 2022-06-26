@@ -105,10 +105,8 @@ impl StarknetModule {
         let pk_bytes = self.private_key.clone().ok_or("No private key provided")?;
         let private_key = Fr::from_be_bytes_mod_order(pk_bytes.as_slice());
 
-        let felts = self
-            .parse_felts(felts)
-            .map_err(|e| JsValue::from(e.to_string()))?;
-        let msg_hash = compute_hash_on_elements(&felts).ok().ok_or("hash error")?;
+        let felts = self.parse_felts(felts).map_err(|e| e.to_jsval())?;
+        let msg_hash = compute_hash_on_elements(&felts).map_err(|e| e.to_jsval())?;
 
         let sig = starknet_sign(&parameters, private_key, msg_hash, None)
             .ok_or("message is out of bound")?;
@@ -129,10 +127,8 @@ impl StarknetModule {
         let parameters = parameters();
         let private_key = Fr::from_be_bytes_mod_order(private_key_bytes.as_slice());
 
-        let felts = self
-            .parse_felts(felts)
-            .map_err(|e| JsValue::from(e.to_string()))?;
-        let msg_hash = compute_hash_on_elements(&felts).ok().ok_or("hash error")?;
+        let felts = self.parse_felts(felts).map_err(|e| e.to_jsval())?;
+        let msg_hash = compute_hash_on_elements(&felts).map_err(|e| e.to_jsval())?;
 
         let sig = starknet_sign(&parameters, private_key, msg_hash, None)
             .ok_or("message is out of bound")?;

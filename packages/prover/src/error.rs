@@ -1,5 +1,8 @@
 use std::fmt;
+use wasm_bindgen::prelude::*;
+// use js_sys::JsValue;
 
+#[wasm_bindgen]
 #[derive(Debug, PartialEq)]
 pub enum Error {
     HashError,
@@ -8,6 +11,19 @@ pub enum Error {
     IncorrectLenError,
     IOError,
 }
+
+impl Error {
+    pub fn to_jsval(&self) -> JsValue {
+        use Error::*;
+
+        match self {
+            HashError | EmptyDataError | OverflowError | IncorrectLenError | IOError => {
+                JsValue::from(self.to_string())
+            }
+        }
+    }
+}
+
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
