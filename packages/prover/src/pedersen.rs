@@ -79,7 +79,7 @@ fn pedersen_hash(x: &Fr, y: &Fr) -> Result<Fr, Error> {
 /// H([x,y,z]) = h(h(x,y),z) = H([w, z]) where w = h(x,y).
 pub fn compute_hash_on_elements(data: &Vec<Fr>) -> Result<Fr, Error> {
     if data.len() == 0 {
-        return Err(Error::EmptyData);
+        return Err(Error::EmptyDataError);
     }
 
     let mut acc = Fr::zero();
@@ -91,21 +91,9 @@ pub fn compute_hash_on_elements(data: &Vec<Fr>) -> Result<Fr, Error> {
     Ok(acc)
 }
 
-pub fn unsafe_hash_to_field(data: &[u8]) -> Result<Fr, Error> {
-    if data.len() == 0 {
-        return Err(Error::EmptyData);
-    }
-
-    let chunks = data.chunks(31);
-
-    let mut elements: Vec<Fr> = chunks.map(|c| Fr::from_be_bytes_mod_order(c)).collect();
-    elements.push(Fr::from(8 * data.len() as u64));
-    compute_hash_on_elements(&elements)
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{compute_hash_on_elements, pedersen_hash, unsafe_hash_to_field};
+    use super::{compute_hash_on_elements, pedersen_hash};
     use ark_ff::field_new;
     use starknet_curve::Fr;
 
@@ -142,15 +130,5 @@ mod tests {
 
         let pedersen_h = compute_hash_on_elements(&data).unwrap();
         assert_eq!(expected, pedersen_h)
-    }
-
-    #[test]
-    fn test_hash_to_field() {
-        let message = b"Hello Marcello! This is a long message from the Rust people. We wrote this unsafe hash to field and would like you to try implementing the same function in Cairo. If we get the same hash, we can then move on to publishing our demo :)";
-
-        let hashed = unsafe_hash_to_field(message).unwrap();
-
-        println!("{}", hashed);
-        // 04828D901704C8D1B6A82F1C256BE2B95C55A8FAA4309CAAF37A3378434AFF1C
     }
 }

@@ -8,11 +8,12 @@ mod rfc6979;
 mod signature;
 
 use ark_ec::ProjectiveCurve;
-use ark_ff::{BigInteger, PrimeField};
+use ark_ff::{bytes::FromBytes, BigInteger, BigInteger256, FpParameters, PrimeField};
 use js_sys::Uint8Array;
-use starknet_curve::Fr;
+use starknet_curve::{Fr, FrParameters};
 
-use pedersen::unsafe_hash_to_field;
+use error::Error;
+use pedersen::compute_hash_on_elements;
 use signature::{parameters, private_key_to_public_key, sign as starknet_sign};
 use wasm_bindgen::prelude::*;
 
@@ -76,11 +77,13 @@ impl StarknetModule {
         self.private_key = Some(private_key.clone())
     }
 
+    #[wasm_bindgen(catch)]
     pub fn get_private_key(&self) -> Result<Uint8Array, JsValue> {
         let pk_bytes = self.private_key.clone().ok_or("No private key provided")?;
         Ok(Uint8Array::from(&pk_bytes[..]))
     }
 
+    #[wasm_bindgen(catch)]
     pub fn get_public_key(&self) -> Result<PublicKey, JsValue> {
         let pk_bytes = self.private_key.clone().ok_or("No private key provided")?;
         let private_key = Fr::from_be_bytes_mod_order(pk_bytes.as_slice());
@@ -94,18 +97,21 @@ impl StarknetModule {
         ))
     }
 
+    /// concat all felts as one array for easier passing
     #[wasm_bindgen(catch)]
-    pub fn sign(&self, msg: &str) -> Result<Signature, JsValue> {
+    pub fn sign(&self, felts: Vec<u8>) -> Result<Signature, JsValue> {
         let parameters = parameters();
 
         let pk_bytes = self.private_key.clone().ok_or("No private key provided")?;
         let private_key = Fr::from_be_bytes_mod_order(pk_bytes.as_slice());
 
-        let msg_hash = unsafe_hash_to_field(msg.as_bytes())
-            .ok()
-            .ok_or("Hash failed")?;
+        let felts = self.parse_felts(felts).map_err(|e| {
+            JsValue::from(e.to_string())
+        })?;
+        let msg_hash = compute_hash_on_elements(&felts).ok().ok_or("hash error")?;
+
         let sig = starknet_sign(&parameters, private_key, msg_hash, None)
-            .ok_or("Message is out of bound")?;
+            .ok_or("message is out of bound")?;
 
         Ok(Signature::new(
             sig.r.into_repr().to_bytes_le(),
@@ -113,23 +119,49 @@ impl StarknetModule {
         ))
     }
 
+    /// concat all felts as one array for easier passing
+    #[wasm_bindgen(catch)]
     pub fn sign_with_external_sk(
         &self,
         private_key_bytes: Vec<u8>,
-        msg: &str,
+        felts: Vec<u8>,
     ) -> Result<Signature, JsValue> {
         let parameters = parameters();
-
         let private_key = Fr::from_be_bytes_mod_order(private_key_bytes.as_slice());
-        let msg_hash = unsafe_hash_to_field(msg.as_bytes())
-            .ok()
-            .ok_or("Hash failed")?;
+
+        let felts = self.parse_felts(felts).map_err(|e| {
+            JsValue::from(e.to_string())
+        })?;
+        let msg_hash = compute_hash_on_elements(&felts).ok().ok_or("hash error")?;
+
         let sig = starknet_sign(&parameters, private_key, msg_hash, None)
-            .ok_or("Message is out of bound")?;
+            .ok_or("message is out of bound")?;
 
         Ok(Signature::new(
             sig.r.into_repr().to_bytes_le(),
             sig.s.into_repr().to_bytes_le(),
         ))
+    }
+
+    fn parse_felts(&self, felts: Vec<u8>) -> Result<Vec<Fr>, Error> {
+        if felts.len() % 32 != 0 {
+            return Err(Error::IncorrectLenError);
+        }
+
+        let felts = felts.chunks(32);
+        let felts = felts
+            .map(|felt_bytes| -> Result<Fr, Error> {
+                let repr = BigInteger256::read(felt_bytes)
+                .map_err(|_| Error::IOError)?;
+
+                if repr > FrParameters::MODULUS {
+                    return Err(Error::OverflowError);
+                }
+
+                Ok(Fr::from_repr(repr).unwrap())
+            })
+            .collect::<Result<Vec<_>, Error>>();
+
+        felts
     }
 }
