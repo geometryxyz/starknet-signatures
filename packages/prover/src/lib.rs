@@ -105,9 +105,9 @@ impl StarknetModule {
         let pk_bytes = self.private_key.clone().ok_or("No private key provided")?;
         let private_key = Fr::from_be_bytes_mod_order(pk_bytes.as_slice());
 
-        let felts = self.parse_felts(felts).map_err(|e| {
-            JsValue::from(e.to_string())
-        })?;
+        let felts = self
+            .parse_felts(felts)
+            .map_err(|e| JsValue::from(e.to_string()))?;
         let msg_hash = compute_hash_on_elements(&felts).ok().ok_or("hash error")?;
 
         let sig = starknet_sign(&parameters, private_key, msg_hash, None)
@@ -129,9 +129,9 @@ impl StarknetModule {
         let parameters = parameters();
         let private_key = Fr::from_be_bytes_mod_order(private_key_bytes.as_slice());
 
-        let felts = self.parse_felts(felts).map_err(|e| {
-            JsValue::from(e.to_string())
-        })?;
+        let felts = self
+            .parse_felts(felts)
+            .map_err(|e| JsValue::from(e.to_string()))?;
         let msg_hash = compute_hash_on_elements(&felts).ok().ok_or("hash error")?;
 
         let sig = starknet_sign(&parameters, private_key, msg_hash, None)
@@ -151,8 +151,7 @@ impl StarknetModule {
         let felts = felts.chunks(32);
         let felts = felts
             .map(|felt_bytes| -> Result<Fr, Error> {
-                let repr = BigInteger256::read(felt_bytes)
-                .map_err(|_| Error::IOError)?;
+                let repr = BigInteger256::read(felt_bytes).map_err(|_| Error::IOError)?;
 
                 if repr > FrParameters::MODULUS {
                     return Err(Error::OverflowError);

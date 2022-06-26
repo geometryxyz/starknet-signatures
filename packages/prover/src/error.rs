@@ -6,9 +6,8 @@ pub enum Error {
     EmptyDataError,
     OverflowError,
     IncorrectLenError,
-    IOError
+    IOError,
 }
-
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
