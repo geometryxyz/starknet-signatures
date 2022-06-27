@@ -1,16 +1,15 @@
 use std::fmt;
 use wasm_bindgen::prelude::*;
-// use js_sys::JsValue;
 
 #[wasm_bindgen]
 #[derive(Debug, PartialEq)]
 pub enum Error {
-    HashError,
     EmptyDataError,
     OverflowError,
     IncorrectLenError,
     IOError,
     TypeError,
+    UnsignableMessage,
 }
 
 impl Error {
@@ -18,8 +17,8 @@ impl Error {
         use Error::*;
 
         match self {
-            HashError | EmptyDataError | OverflowError | IncorrectLenError | IOError
-            | TypeError => JsValue::from(self.to_string()),
+            EmptyDataError | OverflowError | IncorrectLenError | IOError | TypeError
+            | UnsignableMessage => JsValue::from(self.to_string()),
         }
     }
 }
@@ -33,23 +32,23 @@ impl From<JsValue> for Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::HashError => {
-                write!(f, "hash error ocurred")
-            }
             Self::EmptyDataError => {
-                write!(f, "emtpy data error")
+                write!(f, "Empty array cannot be hashed")
             }
             Self::OverflowError => {
-                write!(f, "field overflow error")
+                write!(f, "Field overflow")
             }
             Self::IOError => {
-                write!(f, "bytes read error")
+                write!(f, "Bytes reading failed")
             }
             Self::IncorrectLenError => {
-                write!(f, "incorrect array len error")
+                write!(f, "Incorrect array length")
             }
             Self::TypeError => {
-                write!(f, "incorrect type")
+                write!(f, "Incorrect type")
+            }
+            Self::UnsignableMessage => {
+                write!(f, "Msg is not signable")
             }
         }
     }

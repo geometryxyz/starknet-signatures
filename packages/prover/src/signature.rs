@@ -1,8 +1,22 @@
-use crate::rfc6979::generate_k_rfc6979;
+use crate::{constants::TWO_MODULUS_BITS, error::Error, rfc6979::generate_k_rfc6979};
 
 use ark_ec::ProjectiveCurve;
-use ark_ff::{field_new, Field, FpParameters, One, PrimeField, Zero};
-use starknet_curve::{Fr, Projective};
+use ark_ff::{Field, FpParameters, One, PrimeField, Zero};
+use starknet_curve::{Fq, Fr, Projective};
+
+/*
+starknet curve
+Fq = 3618502788666131213697322783095070105623107215331596699973092056135872020481
+Fr = 3618502788666131213697322783095070105526743751716087489154079457884512865583
+
+cairo
+FIELD_PRIME: 3618502788666131213697322783095070105623107215331596699973092056135872020481
+EC_ORDER: 3618502788666131213697322783095070105526743751716087489154079457884512865583
+
+Fq = FIELD_PRIME and Fr = EC_ORDER
+
+Note: Fq is bigger than Fr => Fq can always fit in Fr
+*/
 
 pub struct SigningParameters {
     pub generator: Projective,
@@ -22,30 +36,27 @@ pub fn parameters() -> SigningParameters {
 pub fn sign(
     parameters: &SigningParameters,
     priv_key: Fr,
-    msg_hash: Fr,
+    msg_hash: Fq,
     seed: Option<u64>,
-) -> Option<Signature> {
-    // Fr::MODULUS_BITS = 251, 2**251 =
-    let two_pow_modulus_bits = field_new!(
-        Fr,
-        "3618502788666131106986593281521497120414687020801267626233049500247285301248"
-    );
-
+) -> Result<Signature, Error> {
     // Note: msg_hash must be smaller than 2**N_ELEMENT_BITS_ECDSA.
     // Message whose hash is >= 2**N_ELEMENT_BITS_ECDSA cannot be signed.
     // This happens with a very small probability.
     // https://github.com/starkware-libs/cairo-lang/blob/167b28bcd940fd25ea3816204fa882a0b0a49603/src/starkware/crypto/starkware/crypto/signature/signature.py#L136
-    if !(Fr::zero() <= msg_hash && msg_hash < two_pow_modulus_bits) {
-        return None;
+    // This also means that msg_hash can be safely converted to Fr
+    if !(Fq::zero() <= msg_hash && msg_hash.into_repr() < TWO_MODULUS_BITS) {
+        return Err(Error::EmptyDataError);
     }
 
+    // since we check that msg hash is smaller then Fr it's safe to unwrap
+    let msg_hash_as_r = Fr::from_repr(msg_hash.into_repr()).unwrap();
     let mut seed = seed;
     loop {
         // replace with rfc6979 as in https://github.com/starkware-libs/cairo-lang/blob/167b28bcd940fd25ea3816204fa882a0b0a49603/src/starkware/crypto/starkware/crypto/signature/signature.py#L145
         let k = generate_k_rfc6979(
-            &starknet_curve::FqParameters::MODULUS,
+            &starknet_curve::FrParameters::MODULUS,
             &priv_key,
-            &msg_hash,
+            &msg_hash_as_r,
             seed,
         );
 
@@ -61,18 +72,18 @@ pub fn sign(
             .x
             .into_repr();
 
-        if !(unchecked_r >= Fr::one().into_repr() && unchecked_r < two_pow_modulus_bits.into_repr())
-        {
+        // r is x coordinate of EcPoint so it's in Fq
+        // here we check that it's safe to convert it into Fr
+        if !(unchecked_r >= Fr::one().into_repr() && unchecked_r < TWO_MODULUS_BITS) {
             // Bad value. This fails with negligible probability.
             continue;
         }
 
-        // since we checked r, it's safe to unwrap
+        // since we checked that it's < TOW_MODULUS_BITS it will be safe to convert to Fr
         let r = Fr::from_repr(unchecked_r).unwrap();
 
-        let temp = msg_hash + r * priv_key;
-
-        // this check in starkware: "temp.into_repr() % starknet_curve::FqParameters::MODULUS"
+        let temp = msg_hash_as_r + r * priv_key;
+        // this check in starkware: "temp.into_repr() % Fr::MODULUS"
         // but since arkworks fr already does operations by modulus we just check that temp != 0
         if temp == Fr::zero() {
             // Bad value. This fails with negligible probability.
@@ -81,14 +92,13 @@ pub fn sign(
 
         // temp is not a zero so it's safe to unwrap
         let w = k * temp.inverse().unwrap();
-
-        if !(w >= Fr::one() && w < two_pow_modulus_bits) {
+        if !(w >= Fr::one() && w.into_repr() < TWO_MODULUS_BITS) {
             // Bad value. This fails with negligible probability.
             continue;
         }
 
         let s = w.inverse().unwrap();
-        break Some(Signature { r, s });
+        break Ok(Signature { r, s });
     }
 }
 
@@ -111,12 +121,13 @@ mod tests {
         },
         providers::{Provider, SequencerGatewayProvider},
     };
-    use starknet_curve::{Affine, Fr};
+    use starknet_curve::{Affine, Fq, Fr};
 
+    // here we skip range and on_curve checks since this is used just for local testing
     pub fn verify_signature(
         parameters: &SigningParameters,
         pub_key: &Affine,
-        msg_hash: &Fr,
+        msg_hash: &Fq,
         signature: &Signature,
     ) -> bool {
         let gen = parameters.generator;
@@ -126,7 +137,10 @@ mod tests {
         // # Compute w = s^-1 (mod EC_ORDER).
         let w = s.inverse().unwrap();
 
-        let point = gen.mul((*msg_hash * w).into_repr()).into_affine()
+        // since we check that msg hash is in bound, it's safe to unwrap
+        let msg_hash = Fr::from_repr(msg_hash.into_repr()).unwrap();
+
+        let point = gen.mul((msg_hash * w).into_repr()).into_affine()
             + pub_key.mul((r * w).into_repr()).into_affine();
 
         let x = Fr::from_repr(point.x.into_repr()).unwrap();
@@ -143,15 +157,15 @@ mod tests {
         let public_key = private_key_to_public_key(&parameters, private_key).into_affine();
 
         let msg = vec![
-            Fr::from(1u64),
-            Fr::from(2u64),
-            Fr::from(3u64),
-            Fr::from(4u64),
-            Fr::from(5u64),
+            Fq::from(1u64),
+            Fq::from(2u64),
+            Fq::from(3u64),
+            Fq::from(4u64),
+            Fq::from(5u64),
         ];
-        let msg_hash = compute_hash_on_elements(&msg).unwrap();
 
-        let sig = sign(&parameters, private_key, msg_hash, None).expect("Message is out of bound");
+        let msg_hash = compute_hash_on_elements(&msg).unwrap();
+        let sig = sign(&parameters, private_key, msg_hash, None).unwrap();
 
         assert_eq!(
             true,

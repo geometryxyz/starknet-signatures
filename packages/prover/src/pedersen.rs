@@ -4,7 +4,7 @@ use crate::error::Error;
 use ark_ec::{AffineCurve, ProjectiveCurve};
 use ark_ff::PrimeField;
 use ark_ff::{BigInteger, Zero};
-use starknet_curve::{Affine, Fr};
+use starknet_curve::{Affine, Fq, Fr};
 
 struct Constants {
     // bits
@@ -37,7 +37,7 @@ lazy_static! {
     };
 }
 
-fn process_single_element(element: Fr, p1: Affine, p2: Affine) -> Affine {
+fn process_single_element(element: Fq, p1: Affine, p2: Affine) -> Affine {
     let mut high_nibble = element.into_repr();
     high_nibble.divn(CONSTANTS.low_part_bits);
 
@@ -56,20 +56,12 @@ fn process_single_element(element: Fr, p1: Affine, p2: Affine) -> Affine {
 /// shift_point + x_low * P_0 + x_high * P1 + y_low * P2  + y_high * P3
 /// where x_low is the 248 low bits of x, x_high is the 4 high bits of x and similarly for y.
 /// shift_point, P_0, P_1, P_2, P_3 are constant points generated from the digits of pi.
-fn pedersen_hash(x: &Fr, y: &Fr) -> Result<Fr, Error> {
-    let pedersen_point = CONSTANTS.hash_shift_point
+fn pedersen_hash(x: &Fq, y: &Fq) -> Fq {
+    let point = CONSTANTS.hash_shift_point
         + process_single_element(*x, CONSTANTS.p0, CONSTANTS.p1)
         + process_single_element(*y, CONSTANTS.p2, CONSTANTS.p3);
 
-    let pedersen_hash = pedersen_point.x.into_repr();
-
-    // this is negligable
-    if pedersen_hash > TWO_MODULUS_BITS {
-        return Err(Error::HashError);
-    }
-
-    let pedersen_hash = Fr::from_repr(pedersen_hash).unwrap();
-    Ok(pedersen_hash)
+    point.x
 }
 
 /// Computes a hash chain over the data, in the following order:
@@ -77,15 +69,15 @@ fn pedersen_hash(x: &Fr, y: &Fr) -> Result<Fr, Error> {
 /// The hash is initialized with 0 and ends with the data length appended.
 /// The length is appended in order to avoid collisions of the following kind:
 /// H([x,y,z]) = h(h(x,y),z) = H([w, z]) where w = h(x,y).
-pub fn compute_hash_on_elements(data: &Vec<Fr>) -> Result<Fr, Error> {
+pub fn compute_hash_on_elements(data: &Vec<Fq>) -> Result<Fq, Error> {
     if data.len() == 0 {
         return Err(Error::EmptyDataError);
     }
 
-    let mut acc = Fr::zero();
-    let data_len = Fr::from(data.len() as u64);
+    let mut acc = Fq::zero();
+    let data_len = Fq::from(data.len() as u64);
     for y in data.iter().chain(std::iter::once(&data_len)) {
-        acc = pedersen_hash(&acc, y)?;
+        acc = pedersen_hash(&acc, y);
     }
 
     Ok(acc)
@@ -95,36 +87,36 @@ pub fn compute_hash_on_elements(data: &Vec<Fr>) -> Result<Fr, Error> {
 mod tests {
     use super::{compute_hash_on_elements, pedersen_hash};
     use ark_ff::field_new;
-    use starknet_curve::Fr;
+    use starknet_curve::Fq;
 
     #[test]
     fn test_pedersen_with_cairo() {
         // CAIRO: pedersen_hash(17, 71) -> 1785999660572583615240258164082465668299482253941125073628479392605449162275
 
-        let seventeen = Fr::from(17u64);
-        let seventy_one = Fr::from(71u64);
+        let seventeen = Fq::from(17u64);
+        let seventy_one = Fq::from(71u64);
 
         let expected = field_new!(
-            Fr,
+            Fq,
             "1785999660572583615240258164082465668299482253941125073628479392605449162275"
         );
 
-        let pedersen_h = pedersen_hash(&seventeen, &seventy_one).unwrap();
+        let pedersen_h = pedersen_hash(&seventeen, &seventy_one);
         assert_eq!(expected, pedersen_h)
     }
 
     #[test]
     fn test_hash_on_long_data() {
         let data = vec![
-            Fr::from(2u64),
-            Fr::from(4u64),
-            Fr::from(8u64),
-            Fr::from(16u64),
-            Fr::from(32u64),
+            Fq::from(2u64),
+            Fq::from(4u64),
+            Fq::from(8u64),
+            Fq::from(16u64),
+            Fq::from(32u64),
         ];
 
         let expected = field_new!(
-            Fr,
+            Fq,
             "2811736568068244484902543134224269103996353337662770485859146392457932405098"
         );
 

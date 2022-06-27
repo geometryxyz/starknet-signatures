@@ -5,12 +5,12 @@ use rfc6979::HmacDrbg;
 use sha2::Sha256;
 use zeroize::Zeroize;
 
-pub fn generate_k_rfc6979<B: BigInteger, F: PrimeField>(
+pub fn generate_k_rfc6979<B: BigInteger, Fr: PrimeField>(
     ec_order: &B,
-    key: &F,
-    msg_hash: &F,
+    key: &Fr,
+    msg_hash: &Fr,
     seed: Option<u64>,
-) -> F {
+) -> Fr {
     // assert that field num of bits is less then 256 (until we make this more generic)
     let block_size = 256;
     let shifting_factor: i64 = block_size as i64 - 252 as i64; // TODO replace 252 with F::size_in_bits()
@@ -41,7 +41,7 @@ pub fn generate_k_rfc6979<B: BigInteger, F: PrimeField>(
         let k = U256::from_be_byte_array(bytes) >> shifting_factor as usize;
 
         if (!k.is_zero() & k.ct_lt(&ec_order)).into() {
-            return F::from_be_bytes_mod_order(&k.to_be_byte_array());
+            return Fr::from_be_bytes_mod_order(&k.to_be_byte_array());
         }
     }
 }
@@ -80,7 +80,7 @@ mod tests {
     }
 
     pub fn generate_k_with_shifting<F: PrimeField>() -> F {
-        let ec_order = starknet_curve::FqParameters::MODULUS;
+        let ec_order = starknet_curve::FrParameters::MODULUS;
 
         let key = F::from(1u64);
         let msg_hash = F::from(5u64);
@@ -91,9 +91,7 @@ mod tests {
     fn test_generate_k_with_shifting() {
         let k: Fr = generate_k_with_shifting();
 
-        println!("{}", k);
-
-        // Hardcode the value from `generate_k.py`
+        // Hardcoded value from `generate_k.py`
         let expected = Fr::from_repr(BigInteger256::new([
             0x9BD45D0F07D57B17,
             0xE29FF18976642E7F,

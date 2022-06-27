@@ -2,7 +2,9 @@ import { StarknetModule } from "starknet-signature";
 import { bufToBigint } from 'bigint-conversion'
 
 const starknet = new StarknetModule(); 
-const private_key = Uint8Array.from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6])
+// since BigInt FromBytes reads in le representation, here we give private key in le representation
+const private_key_le = Uint8Array.from([5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+const private_key_be = Uint8Array.from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5])
 
 // since BigInt FromBytes reads in le representation, here we give felts in le representation
 const felts = [
@@ -48,8 +50,13 @@ try {
     console.log('Err: ', err)
 }
 
-starknet.load_sk(private_key)
+starknet.load_sk(private_key_le)
 console.log('private key: ', bufToBigint(starknet.get_private_key()))
+
+const pk = starknet.get_public_key()
+console.log('x', bufToBigint(pk.get_x()))
+console.log('y', bufToBigint(pk.get_y()))
+
 
 // valid signature
 const signature3 = starknet.sign(felts)
@@ -57,7 +64,7 @@ console.log('r3: ', bufToBigint(signature3.get_r()))
 console.log('s3: ', bufToBigint(signature3.get_s()))
 
 // valid signature
-const signature4 = starknet.sign_with_external_sk(private_key, felts)
+const signature4 = starknet.sign_with_external_sk(private_key_be, felts)
 console.log('r4: ', bufToBigint(signature4.get_r()))
 console.log('s4: ', bufToBigint(signature4.get_s()))
 
