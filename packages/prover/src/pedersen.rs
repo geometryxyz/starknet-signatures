@@ -123,4 +123,23 @@ mod tests {
         let pedersen_h = compute_hash_on_elements(&data).unwrap();
         assert_eq!(expected, pedersen_h)
     }
+
+    #[test]
+    fn test_hash_on_big_fqs() {
+        let data = vec![
+            -Fq::from(5u64),
+            -Fq::from(4u64),
+            -Fq::from(3u64),
+            -Fq::from(2u64),
+            -Fq::from(1u64),
+        ];
+
+        let expected = field_new!(
+            Fq,
+            "1129304730557028657400116705980657835953282252153007670503174589192316695406"
+        );
+
+        let pedersen_h = compute_hash_on_elements(&data).unwrap();
+        assert_eq!(expected, pedersen_h)
+    }
 }
