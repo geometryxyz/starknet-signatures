@@ -16,6 +16,7 @@ use error::Error;
 use pedersen::compute_hash_on_elements;
 use signature::{parameters, private_key_to_public_key, sign as starknet_sign};
 use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsCast;
 
 #[wasm_bindgen]
 pub struct PublicKey {
@@ -97,9 +98,8 @@ impl StarknetModule {
         ))
     }
 
-    /// concat all felts as one array for easier passing
     #[wasm_bindgen(catch)]
-    pub fn sign(&self, felts: Vec<u8>) -> Result<Signature, JsValue> {
+    pub fn sign(&self, felts: js_sys::Array) -> Result<Signature, JsValue> {
         let parameters = parameters();
 
         let pk_bytes = self.private_key.clone().ok_or("No private key provided")?;
@@ -117,12 +117,11 @@ impl StarknetModule {
         ))
     }
 
-    /// concat all felts as one array for easier passing
     #[wasm_bindgen(catch)]
     pub fn sign_with_external_sk(
         &self,
         private_key_bytes: Vec<u8>,
-        felts: Vec<u8>,
+        felts: js_sys::Array,
     ) -> Result<Signature, JsValue> {
         let parameters = parameters();
         let private_key = Fr::from_be_bytes_mod_order(private_key_bytes.as_slice());
@@ -139,15 +138,24 @@ impl StarknetModule {
         ))
     }
 
-    fn parse_felts(&self, felts: Vec<u8>) -> Result<Vec<Fr>, Error> {
-        if felts.len() % 32 != 0 {
-            return Err(Error::IncorrectLenError);
-        }
+    fn parse_felts(&self, felts: js_sys::Array) -> Result<Vec<Fr>, Error> {
+        let felts: Result<Vec<Uint8Array>, JsValue> = felts
+            .values()
+            .into_iter()
+            .map(|felt| felt.unwrap_throw().dyn_into::<Uint8Array>())
+            .collect();
 
-        let felts = felts.chunks(32);
-        let felts = felts
+        let felts: Vec<Vec<u8>> = felts?.iter().map(|x| x.to_vec()).collect();
+
+        felts
+            .iter()
             .map(|felt_bytes| -> Result<Fr, Error> {
-                let repr = BigInteger256::read(felt_bytes).map_err(|_| Error::IOError)?;
+                if felt_bytes.len() != 32 {
+                    return Err(Error::IncorrectLenError);
+                }
+
+                let repr =
+                    BigInteger256::read(felt_bytes.as_slice()).map_err(|_| Error::IOError)?;
 
                 if repr > FrParameters::MODULUS {
                     return Err(Error::OverflowError);
@@ -155,8 +163,6 @@ impl StarknetModule {
 
                 Ok(Fr::from_repr(repr).unwrap())
             })
-            .collect::<Result<Vec<_>, Error>>();
-
-        felts
+            .collect::<Result<Vec<_>, Error>>()
     }
 }

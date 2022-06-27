@@ -10,6 +10,7 @@ pub enum Error {
     OverflowError,
     IncorrectLenError,
     IOError,
+    TypeError,
 }
 
 impl Error {
@@ -17,10 +18,15 @@ impl Error {
         use Error::*;
 
         match self {
-            HashError | EmptyDataError | OverflowError | IncorrectLenError | IOError => {
-                JsValue::from(self.to_string())
-            }
+            HashError | EmptyDataError | OverflowError | IncorrectLenError | IOError
+            | TypeError => JsValue::from(self.to_string()),
         }
+    }
+}
+
+impl From<JsValue> for Error {
+    fn from(_: JsValue) -> Self {
+        Self::TypeError
     }
 }
 
@@ -41,6 +47,9 @@ impl fmt::Display for Error {
             }
             Self::IncorrectLenError => {
                 write!(f, "incorrect array len error")
+            }
+            Self::TypeError => {
+                write!(f, "incorrect type")
             }
         }
     }

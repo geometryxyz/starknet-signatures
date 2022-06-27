@@ -31,10 +31,14 @@ const wrong_len_felts = [
     Uint8Array.from([5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 ]
 
-
-const felts_flattened = Uint8Array.from(felts.reduce((a, b) => [...a, ...b], []));
-const felts_overflow_flattened = Uint8Array.from(overflow_felts.reduce((a, b) => [...a, ...b], []));
-const wrong_len_felts_flattened = Uint8Array.from(wrong_len_felts.reduce((a, b) => [...a, ...b], []));
+// since BigInt FromBytes reads in le representation, here we give felts in le representation
+const incorrect_type_felts = [
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+    [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+]
 
 
 // expect error since no private key is provided
@@ -48,25 +52,32 @@ starknet.load_sk(private_key)
 console.log('private key: ', bufToBigint(starknet.get_private_key()))
 
 // valid signature
-const signature3 = starknet.sign(felts_flattened)
+const signature3 = starknet.sign(felts)
 console.log('r3: ', bufToBigint(signature3.get_r()))
 console.log('s3: ', bufToBigint(signature3.get_s()))
 
 // valid signature
-const signature4 = starknet.sign_with_external_sk(private_key, felts_flattened)
+const signature4 = starknet.sign_with_external_sk(private_key, felts)
 console.log('r4: ', bufToBigint(signature4.get_r()))
 console.log('s4: ', bufToBigint(signature4.get_s()))
 
 //expect overflow
 try { 
-    starknet.sign(felts_overflow_flattened)
+    starknet.sign(overflow_felts)
 } catch(err) { 
     console.log('Err: ', err)
 }
 
 // expect len error
 try { 
-    starknet.sign(wrong_len_felts_flattened)
+    starknet.sign(wrong_len_felts)
+} catch(err) { 
+    console.log('Err: ', err)
+}
+
+//expect wrong type
+try { 
+    starknet.sign(incorrect_type_felts)
 } catch(err) { 
     console.log('Err: ', err)
 }
