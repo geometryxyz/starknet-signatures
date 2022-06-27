@@ -6,22 +6,31 @@ mod error;
 mod pedersen;
 mod rfc6979;
 mod signature;
+mod util;
 
 use ark_ec::ProjectiveCurve;
 use ark_ff::UniformRand;
-use ark_ff::{bytes::FromBytes, BigInteger, BigInteger256, FpParameters, PrimeField};
+use ark_ff::{BigInteger, PrimeField};
 use js_sys::Uint8Array;
 use rand::rngs::OsRng;
-use starknet_curve::{Fq, FqParameters, Fr, FrParameters};
+use starknet_curve::{Fq, Fr};
 
 use error::Error;
 use pedersen::compute_hash_on_elements;
 use signature::{parameters, private_key_to_public_key, sign as starknet_sign};
+use util::{bytes_safe, try_bytes_to_field};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
+/*
+   Bytes that are being sent from JS are in LE endianness
+   For the sake of simplicity we store all bytes in LE endianness too
+   This can be parametrized such that lib user can choose endianness if needed
+*/
+
 #[wasm_bindgen]
 pub struct PublicKey {
+    // store bytes in LE endianness as a convention
     x: Vec<u8>,
     y: Vec<u8>,
 }
@@ -44,6 +53,7 @@ impl PublicKey {
 
 #[wasm_bindgen]
 pub struct Signature {
+    // store bytes in LE endianness as a convention
     r: Vec<u8>,
     s: Vec<u8>,
 }
@@ -66,6 +76,7 @@ impl Signature {
 
 #[wasm_bindgen]
 pub struct StarknetModule {
+    // store bytes in LE endianness as a convention
     private_key: Option<Vec<u8>>,
 }
 
@@ -80,21 +91,10 @@ impl StarknetModule {
         self.private_key = Some(Fr::rand(&mut OsRng).into_repr().to_bytes_be());
     }
 
+    /// bytes are expected to be in LE representation
     pub fn load_sk(&mut self, private_key: Vec<u8>) -> Result<(), JsValue> {
-        // take bytes in le_representation and check if repr is inside field
-        let bytes_ok = |unchecked_bytes: &Vec<u8>| -> Result<Vec<u8>, Error> {
-            let repr =
-                BigInteger256::read(unchecked_bytes.as_slice()).map_err(|_| Error::IOError)?;
-
-            if repr > FrParameters::MODULUS {
-                return Err(Error::OverflowError);
-            }
-
-            Ok(repr.to_bytes_be())
-        };
-
-        let bytes = bytes_ok(&private_key).map_err(|e| e.to_jsval())?;
-        self.private_key = Some(bytes);
+        let repr = bytes_safe::<Fr>(&private_key).map_err(|e| e.to_jsval())?;
+        self.private_key = Some(repr.to_bytes_le());
 
         Ok(())
     }
@@ -108,14 +108,14 @@ impl StarknetModule {
     #[wasm_bindgen(catch)]
     pub fn get_public_key(&self) -> Result<PublicKey, JsValue> {
         let pk_bytes = self.private_key.clone().ok_or("No private key provided")?;
-        let private_key = Fr::from_be_bytes_mod_order(pk_bytes.as_slice());
+        let private_key = Fr::from_le_bytes_mod_order(pk_bytes.as_slice());
 
         let parameters = parameters();
         let public_key = private_key_to_public_key(&parameters, private_key).into_affine();
 
         Ok(PublicKey::new(
-            public_key.x.into_repr().to_bytes_be(),
-            public_key.y.into_repr().to_bytes_be(),
+            public_key.x.into_repr().to_bytes_le(),
+            public_key.y.into_repr().to_bytes_le(),
         ))
     }
 
@@ -124,7 +124,7 @@ impl StarknetModule {
         let parameters = parameters();
 
         let pk_bytes = self.private_key.clone().ok_or("No private key provided")?;
-        let private_key = Fr::from_be_bytes_mod_order(pk_bytes.as_slice());
+        let private_key = Fr::from_le_bytes_mod_order(pk_bytes.as_slice());
 
         let felts = self.parse_felts(felts).map_err(|e| e.to_jsval())?;
         let msg_hash = compute_hash_on_elements(&felts).map_err(|e| e.to_jsval())?;
@@ -133,8 +133,8 @@ impl StarknetModule {
             starknet_sign(&parameters, private_key, msg_hash, None).map_err(|e| e.to_jsval())?;
 
         Ok(Signature::new(
-            sig.r.into_repr().to_bytes_be(),
-            sig.s.into_repr().to_bytes_be(),
+            sig.r.into_repr().to_bytes_le(),
+            sig.s.into_repr().to_bytes_le(),
         ))
     }
 
@@ -145,8 +145,8 @@ impl StarknetModule {
         felts: js_sys::Array,
     ) -> Result<Signature, JsValue> {
         let parameters = parameters();
-        let private_key = Fr::from_be_bytes_mod_order(private_key_bytes.as_slice());
 
+        let private_key: Fr = try_bytes_to_field(&private_key_bytes).map_err(|e| e.to_jsval())?;
         let felts = self.parse_felts(felts).map_err(|e| e.to_jsval())?;
         let msg_hash = compute_hash_on_elements(&felts).map_err(|e| e.to_jsval())?;
 
@@ -154,11 +154,12 @@ impl StarknetModule {
             starknet_sign(&parameters, private_key, msg_hash, None).map_err(|e| e.to_jsval())?;
 
         Ok(Signature::new(
-            sig.r.into_repr().to_bytes_be(),
-            sig.s.into_repr().to_bytes_be(),
+            sig.r.into_repr().to_bytes_le(),
+            sig.s.into_repr().to_bytes_le(),
         ))
     }
 
+    /// felts are interpreted in le form since FromBytes expects LE representation
     fn parse_felts(&self, felts: js_sys::Array) -> Result<Vec<Fq>, Error> {
         let felts: Result<Vec<Uint8Array>, JsValue> = felts
             .values()
@@ -170,20 +171,7 @@ impl StarknetModule {
 
         felts
             .iter()
-            .map(|felt_bytes| -> Result<Fq, Error> {
-                if felt_bytes.len() != 32 {
-                    return Err(Error::IncorrectLenError);
-                }
-
-                let repr =
-                    BigInteger256::read(felt_bytes.as_slice()).map_err(|_| Error::IOError)?;
-
-                if repr > FqParameters::MODULUS {
-                    return Err(Error::OverflowError);
-                }
-
-                Ok(Fq::from_repr(repr).unwrap())
-            })
+            .map(|felt_bytes| -> Result<Fq, Error> { try_bytes_to_field(felt_bytes) })
             .collect::<Result<Vec<_>, Error>>()
     }
 }

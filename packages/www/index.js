@@ -1,47 +1,24 @@
-import { StarknetModule } from "starknet-signature";
-import { bufToBigint } from 'bigint-conversion'
+import { StarknetModule } from 'starknet-signature';
+import * as toBuffer from 'typedarray-to-buffer'; // toBuffer function enables converting Uint8Array to Buff without copying
+import { toBufferLE, toBigIntLE } from 'bigint-buffer';
 
+const BUFF_LEN = 32;
+
+const private_key = 5n;
+
+const felts = [1n, 2n, 3n, 4n, 5n];
+const felts_le = felts.map((felt) => toBufferLE(felt, BUFF_LEN));
+// element bigger than Fq
+const overflow_felts = [3618502788666131213697322783095070105623107215331596699973092056135872020485n];
+const overflow_felts_le = overflow_felts.map((felt) => toBufferLE(felt, BUFF_LEN));
+
+const wrong_len_felts = [1n];
+const wrong_len_felts_le = wrong_len_felts.map((felt) => toBufferLE(felt, 31));
+
+const incorrect_type_felts = [1, 2, 3];
+
+///STARKNET MODULE USAGE
 const starknet = new StarknetModule(); 
-// since BigInt FromBytes reads in le representation, here we give private key in le representation
-const private_key_le = Uint8Array.from([5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-const private_key_be = Uint8Array.from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5])
-
-// since BigInt FromBytes reads in le representation, here we give felts in le representation
-const felts = [
-    Uint8Array.from([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]), 
-    Uint8Array.from([2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-    Uint8Array.from([3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-    Uint8Array.from([4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-    Uint8Array.from([5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-]
-
-// since BigInt FromBytes reads in le representation, here we give felts in le representation
-const overflow_felts = [
-    Uint8Array.from([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255]), 
-    Uint8Array.from([2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-    Uint8Array.from([3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-    Uint8Array.from([4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-    Uint8Array.from([5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-]
-
-// since BigInt FromBytes reads in le representation, here we give felts in le representation
-const wrong_len_felts = [
-    Uint8Array.from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]), 
-    Uint8Array.from([2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-    Uint8Array.from([3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-    Uint8Array.from([4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-    Uint8Array.from([5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-]
-
-// since BigInt FromBytes reads in le representation, here we give felts in le representation
-const incorrect_type_felts = [
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
-    [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-]
-
 
 // expect error since no private key is provided
 try { 
@@ -50,39 +27,38 @@ try {
     console.log('Err: ', err)
 }
 
-starknet.load_sk(private_key_le)
-console.log('private key: ', bufToBigint(starknet.get_private_key()))
+starknet.load_sk(toBufferLE(private_key, BUFF_LEN))
+console.log('private key: ', toBigIntLE(toBuffer(starknet.get_private_key())))
 
 const pk = starknet.get_public_key()
-console.log('x', bufToBigint(pk.get_x()))
-console.log('y', bufToBigint(pk.get_y()))
-
-
-// valid signature
-const signature3 = starknet.sign(felts)
-console.log('r3: ', bufToBigint(signature3.get_r()))
-console.log('s3: ', bufToBigint(signature3.get_s()))
+console.log('x', toBigIntLE(toBuffer(pk.get_x())))
+console.log('y', toBigIntLE(toBuffer(pk.get_y())))
 
 // valid signature
-const signature4 = starknet.sign_with_external_sk(private_key_be, felts)
-console.log('r4: ', bufToBigint(signature4.get_r()))
-console.log('s4: ', bufToBigint(signature4.get_s()))
+const signature = starknet.sign(felts_le)
+console.log('r', toBigIntLE(toBuffer(signature.get_r())))
+console.log('s', toBigIntLE(toBuffer(signature.get_s())))
 
-//expect overflow
+// valid signature
+const signature2 = starknet.sign_with_external_sk(toBufferLE(private_key, BUFF_LEN), felts_le)
+console.log('r2', toBigIntLE(toBuffer(signature2.get_r())))
+console.log('s2', toBigIntLE(toBuffer(signature2.get_s())))
+
+// expect overflow
 try { 
-    starknet.sign(overflow_felts)
+    starknet.sign(overflow_felts_le)
 } catch(err) { 
     console.log('Err: ', err)
 }
 
 // expect len error
 try { 
-    starknet.sign(wrong_len_felts)
+    starknet.sign(wrong_len_felts_le)
 } catch(err) { 
     console.log('Err: ', err)
 }
 
-//expect wrong type
+// expect wrong type
 try { 
     starknet.sign(incorrect_type_felts)
 } catch(err) { 
