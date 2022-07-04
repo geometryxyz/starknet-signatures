@@ -21,3 +21,6 @@
 
 # Cairo
 artifacts
+
+**/node_modules/**
+node.json
