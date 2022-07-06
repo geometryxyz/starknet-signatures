@@ -14,17 +14,14 @@ function isNumeric(value: any) {
 const BUFF_LEN = 32;
 
 export default function WasmTestButton() {
-	const [wasmGreeting, setWasmGreeting] = useState('');
-
 	const [privateKey, setPrivateKey] = useState<string>();
 	const [isPrivateKeyValid, setIsPrivateKeyValid] = useState<boolean>(false);
 
-	const [isMessageCorrect, setIsMessageCorrect] = useState<boolean>(false);
 	const [message, setMessage] = useState<string[]>([]);
+	const [inputSize, setInputSize] = useState<number>(0);
+	const [currentFelt, setCurrentFelt] = useState('');
 
 	const [signature, setSignature] = useState<{ r: string; s: string }>();
-
-	const [wasmLoaded, setWasmLoaded] = useState<false | true | 'failed'>(false);
 
 	// Wait for wasm to be loaded
 	useEffect(() => {
@@ -32,7 +29,6 @@ export default function WasmTestButton() {
 			const { promise } = getGlobalWasmState();
 			await promise;
 			const { failedToLoad } = getGlobalWasmState();
-			setWasmLoaded(failedToLoad ? 'failed' : true);
 		};
 		waitForWasm();
 	}, []);
@@ -52,17 +48,6 @@ export default function WasmTestButton() {
 		}
 	};
 
-	const textToDisplay = () => {
-		switch (wasmLoaded) {
-			case true:
-				return wasmGreeting;
-			case false:
-				return 'Loading....';
-			case 'failed':
-				return 'Failed to load';
-		}
-	};
-
 	return (
 		<div>
 			<p>Your private key: </p>
@@ -78,24 +63,39 @@ export default function WasmTestButton() {
 			<br />
 			<a>Key correct: {isPrivateKeyValid ? '✓' : '⛔'}</a>
 			<br />
-			<p>Message:</p>
-			<input
-				onChange={(e: any) => {
-					const input = e.target.value as string;
-					const felts = input.split(',');
-					const isInputValid = felts.every((e) => isNumeric(e));
-					if (isInputValid) {
-						setIsMessageCorrect(true);
-						setMessage(felts);
-					} else {
-						setIsMessageCorrect(false);
-					}
-				}}
-			/>
+
+			<table>
+				<tr>
+					<th>Message</th>
+				</tr>
+				{new Array(inputSize).fill(0).map((e, i) => (
+					<tr>
+						<th>Felt {message[i]}</th>
+					</tr>
+				))}
+				<div>
+					<input
+						onChange={(e: any) => {
+							const input = e.target.value as string;
+							setCurrentFelt(input);
+						}}
+					/>
+					<button
+						onClick={() => {
+							if (isNumeric(currentFelt)) {
+								setMessage([...message, currentFelt]);
+								setInputSize(inputSize + 1);
+							}
+						}}
+						disabled={!isNumeric(currentFelt)}
+					>
+						confirm
+					</button>
+				</div>
+			</table>
 			<br />
-			<a>Message correct: {isMessageCorrect ? '✓' : '⛔'}</a>
 			<br />
-			<button disabled={!(isMessageCorrect && isPrivateKeyValid)} onClick={onClick}>
+			<button disabled={!isPrivateKeyValid} onClick={onClick}>
 				Sign
 			</button>
 			<br />
