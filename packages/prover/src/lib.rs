@@ -160,10 +160,7 @@ impl StarknetModule {
     }
 
     #[wasm_bindgen]
-    pub fn sign_hashed(
-        &self,
-        msg_hash_bytes: Vec<u8>,
-    ) -> Result<Signature, JsValue> {
+    pub fn sign_hashed(&self, msg_hash_bytes: Vec<u8>) -> Result<Signature, JsValue> {
         let parameters = parameters();
 
         let pk_bytes = self.private_key.clone().ok_or("No private key provided")?;
@@ -181,10 +178,7 @@ impl StarknetModule {
     }
 
     #[wasm_bindgen]
-    pub fn hash_felts(
-        &self,
-        felts: js_sys::Array,
-    ) -> Result<Vec<u8>, JsValue> {
+    pub fn hash_felts(&self, felts: js_sys::Array) -> Result<Vec<u8>, JsValue> {
         let felts = self.parse_felts(felts).map_err(|e| e.to_jsval())?;
         let msg_hash = compute_hash_on_elements(&felts).map_err(|e| e.to_jsval())?;
 
