@@ -8,11 +8,11 @@
   },
   "scripts": {
     "build": "webpack --config webpack.config.js",
-    "start": "webpack-dev-server", 
-    "bench": "npm run bench-hash && npm run bench-signature", 
+    "start": "webpack-dev-server",
+    "bench": "npm run bench-hash && npm run bench-signature",
     "bench-hash": "node bench/hash.bench.js",
     "bench-signature": "node bench/signature.bench.js",
-    "bench-hash-hyperfine": "hyperfine --warmup 20 --export-json hyperfine/hash/report 'node ./hyperfine/hash/wasm.js' 'node ./hyperfine/hash/native.js'",
+    "bench-hash-hyperfine": "hyperfine --warmup 20 --export-json hyperfine/hash/report 'node ./hyperfine/hash/wasm.js' 'node ./hyperfine/hash/native.js' 'node ./hyperfine/hash/cpp.js'",
     "bench-signature-hyperfine": "hyperfine --warmup 20 --export-json hyperfine/signature/report 'node ./hyperfine/signature/wasm.js' 'node ./hyperfine/signature/native.js'"
   },
   "repository": {
@@ -27,11 +27,15 @@
   ],
   "dependencies": {
     "bigint-buffer": "^1.1.5",
+    "bn.js": "^5.2.1",
+    "ffi-napi": "^4.0.3",
     "starknet-signature": "file:../prover/pkg",
-    "typedarray-to-buffer": "^4.0.0"
+    "typedarray-to-buffer": "^4.0.0",
+    "bn": "^1.0.5"
   },
   "devDependencies": {
     "benchmark": "^2.1.4",
+    "chai": "^4.3.6",
     "copy-webpack-plugin": "^5.0.0",
     "hello-wasm-pack": "^0.1.0",
     "starknet": "^3.15.0",
