@@ -24,3 +24,7 @@ artifacts
 
 **/node_modules/**
 node.json
+
+# Benchmarks
+packages/www/hyperfine/hash/report
+packages/www/hyperfine/signature/report
