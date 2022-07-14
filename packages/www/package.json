@@ -11,7 +11,9 @@
     "start": "webpack-dev-server", 
     "bench": "npm run bench-hash && npm run bench-signature", 
     "bench-hash": "node bench/hash.bench.js",
-    "bench-signature": "node bench/signature.bench.js"
+    "bench-signature": "node bench/signature.bench.js",
+    "bench-hash-hyperfine": "hyperfine --warmup 20 --export-json hyperfine/hash/report 'node ./hyperfine/hash/wasm.js' 'node ./hyperfine/hash/native.js'",
+    "bench-signature-hyperfine": "hyperfine --warmup 20 --export-json hyperfine/hash/report 'node ./hyperfine/signature/wasm.js' 'node ./hyperfine/signature/native.js'"
   },
   "repository": {
     "type": "git",
