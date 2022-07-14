@@ -13,7 +13,7 @@
     "bench-hash": "node bench/hash.bench.js",
     "bench-signature": "node bench/signature.bench.js",
     "bench-hash-hyperfine": "hyperfine --warmup 20 --export-json hyperfine/hash/report 'node ./hyperfine/hash/wasm.js' 'node ./hyperfine/hash/native.js'",
-    "bench-signature-hyperfine": "hyperfine --warmup 20 --export-json hyperfine/hash/report 'node ./hyperfine/signature/wasm.js' 'node ./hyperfine/signature/native.js'"
+    "bench-signature-hyperfine": "hyperfine --warmup 20 --export-json hyperfine/signature/report 'node ./hyperfine/signature/wasm.js' 'node ./hyperfine/signature/native.js'"
   },
   "repository": {
     "type": "git",
@@ -25,12 +25,6 @@
     "rust",
     "webpack"
   ],
-  "author": "Ashley Williams <ashley666ashley@gmail.com>",
-  "license": "(MIT OR Apache-2.0)",
-  "bugs": {
-    "url": "https://github.com/rustwasm/create-wasm-app/issues"
-  },
-  "homepage": "https://github.com/rustwasm/create-wasm-app#readme",
   "dependencies": {
     "bigint-buffer": "^1.1.5",
     "starknet-signature": "file:../prover/pkg",
