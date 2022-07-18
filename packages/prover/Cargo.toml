@@ -3,6 +3,9 @@ name = "starknet-signature"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+crate-type = ["cdylib", "rlib"]
+
 [dependencies]
 anyhow = "1.0.55"
 ark-crypto-primitives = "0.3.0"
@@ -14,3 +17,14 @@ proof-essentials = { git = "ssh://git@github.com/geometryresearch/proof-toolbox.
 starknet-curve = { git = "ssh://git@github.com/geometryresearch/proof-toolbox.git" }
 rand = "0.8.4"
 thiserror = "1.0.30"
+zeroize = "1.5.5"
+crypto-bigint = { version = "0.4.7", features = ["generic-array"] }
+hmac = { version = "0.12.1" }
+rfc6979 = "0.2.0"
+sha2 = "0.10.2"
+lazy_static = "1.4.0"
+generic-array = "0.14.5"
+digest = { version = "0.10.3", features = ["core-api"] } 
+wasm-bindgen = "0.2.81"
+js-sys = "0.3.58"
+starknet = "0.2.0"
