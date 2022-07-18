@@ -3,10 +3,12 @@
 	"version": "0.1.0",
 	"private": true,
 	"license": "MIT",
+	"homepage": ".",
 	"dependencies": {
 		"@types/typedarray-to-buffer": "^4.0.0",
 		"bigint-buffer": "^1.1.5",
 		"ethers": "^5.6.9",
+		"gh-pages": "^4.0.0",
 		"react": "^16.13.1",
 		"react-dom": "^16.13.1",
 		"starknet-signature": "file:../prover/pkg",
@@ -41,7 +43,8 @@
 		"test": "react-app-rewired test",
 		"eject": "react-scripts eject",
 		"predeploy": "npm run build",
-		"deploy": "gh-pages -d build",
+		"deploy": "yarn gh-pages -d build",
+		"pretest": "yarn build-wasm",
 		"build-wasm": "wasm-pack build ../prover && wasm-pack build ../prover --target nodejs --out-dir pkg-node",
 		"test-native": "cargo test --manifest-path rust-wasm/Cargo.toml"
 	},
