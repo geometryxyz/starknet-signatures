@@ -7,6 +7,8 @@ import { toBufferLE, toBigIntLE } from 'bigint-buffer';
 
 import { joinSignature } from '@ethersproject/bytes';
 
+import { useStarknet } from '@starknet-react/core';
+
 function isNumeric(value: any) {
 	return /^-?\d+$/.test(value);
 }
@@ -14,6 +16,8 @@ function isNumeric(value: any) {
 const BUFF_LEN = 32;
 
 export default function WasmTestButton() {
+	const { account } = useStarknet();
+
 	const [privateKey, setPrivateKey] = useState<string>();
 	const [isPrivateKeyValid, setIsPrivateKeyValid] = useState<boolean>(false);
 
@@ -50,6 +54,7 @@ export default function WasmTestButton() {
 
 	return (
 		<div>
+			<a>gm {account}</a>
 			<p>Your private key: </p>
 			<input
 				onChange={(e: any) => {
@@ -63,7 +68,6 @@ export default function WasmTestButton() {
 			<br />
 			<a>Key correct: {isPrivateKeyValid ? '✓' : '⛔'}</a>
 			<br />
-
 			<table>
 				<tr>
 					<th>Message</th>
