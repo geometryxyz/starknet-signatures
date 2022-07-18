@@ -159,32 +159,6 @@ impl StarknetModule {
         ))
     }
 
-    #[wasm_bindgen]
-    pub fn sign_hashed(&self, msg_hash_bytes: Vec<u8>) -> Result<Signature, JsValue> {
-        let parameters = parameters();
-
-        let pk_bytes = self.private_key.clone().ok_or("No private key provided")?;
-        let private_key = Fr::from_le_bytes_mod_order(pk_bytes.as_slice());
-
-        let msg_hash = try_bytes_to_field(&msg_hash_bytes).map_err(|e| e.to_jsval())?;
-
-        let sig =
-            starknet_sign(&parameters, private_key, msg_hash, None).map_err(|e| e.to_jsval())?;
-
-        Ok(Signature::new(
-            sig.r.into_repr().to_bytes_le(),
-            sig.s.into_repr().to_bytes_le(),
-        ))
-    }
-
-    #[wasm_bindgen]
-    pub fn hash_felts(&self, felts: js_sys::Array) -> Result<Vec<u8>, JsValue> {
-        let felts = self.parse_felts(felts).map_err(|e| e.to_jsval())?;
-        let msg_hash = compute_hash_on_elements(&felts).map_err(|e| e.to_jsval())?;
-
-        Ok(msg_hash.into_repr().to_bytes_le())
-    }
-
     /// felts are interpreted in le form since FromBytes expects LE representation
     fn parse_felts(&self, felts: js_sys::Array) -> Result<Vec<Fq>, Error> {
         let felts: Result<Vec<Uint8Array>, JsValue> = felts
