@@ -23,6 +23,7 @@
 artifacts
 
 **/node_modules/**
+**/build/**
 node.json
 
 # Benchmarks
