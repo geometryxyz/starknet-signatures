@@ -39,3 +39,5 @@ async def test_verifier(factory):
 
     await verifier.verify_sig(msg, signer.public_key, (sig_r, sig_s)).call()
 
+    verify_tx = await verifier.verify_signature(msg, signer.public_key, (sig_r, sig_s)).invoke()
+
