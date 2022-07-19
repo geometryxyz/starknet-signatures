@@ -26,8 +26,8 @@ const useFormState = () => {
   const [secretKey, setSecretKey] = useState(null);
   const [public_key_x, setPkX] = useState(null);
   const [public_key_y, setPkY] = useState(null);
-  const [sig_x, setSigX] = useState(null);
-  const [sig_y, setSigY] = useState(null);
+  const [sig_r, setSigR] = useState(null);
+  const [sig_s, setSigS] = useState(null);
 
   const [feltsToSign, setFelts] = useState([]);
 
@@ -40,10 +40,10 @@ const useFormState = () => {
     setPkY,
     feltsToSign,
     setFelts,
-    sig_x,
-    setSigX,
-    sig_y,
-    setSigY,
+    sig_r,
+    setSigR,
+    sig_s,
+    setSigS,
   };
 };
 
@@ -95,6 +95,7 @@ function SubmitToStarkNet() {
   return(
     <div id="submission_module">
         <h2>Step 3: Submit to StarkNet for Verification</h2>
+        <p>The <a href="https://goerli.voyager.online/contract/0x026c8bc8bf071a54c4b0713ad52715fe92a471f85bf7f224322cbb0a29666ce1#transactions">verification contract</a> is deployed to StarkNet on the Goerli testnet. You can read the source code here</p>
         <WalletComponent />
         <AccComponent />
     </div>
@@ -106,9 +107,9 @@ const PKDisplayComponent = () => {
 
   return (
     <div>
-      sk: {secretKey ? secretKey.toString() : "Empty"} <br></br>
-      pk_x: {public_key_x ? public_key_x.toString() : "Empty"} <br></br>
-      pk_y: {public_key_y ? public_key_y.toString() : "Empty"} <br></br>
+      secret key: {secretKey ? secretKey.toString() : "Empty"} <br></br>
+      public key (x-coordinate): {public_key_x ? public_key_x.toString() : "Empty"} <br></br>
+      public key (y-coordinate): {public_key_y ? public_key_y.toString() : "Empty"} <br></br>
     </div>
   );
 };
@@ -158,7 +159,7 @@ const MessageInputComponent = () => {
 };
 
 const SignComponent = () => {
-  const { feltsToSign, setSigX, setSigY } = useSharedFormState();
+  const { feltsToSign, setSigR, setSigS } = useSharedFormState();
   return (
     <div>
       <button
@@ -168,8 +169,8 @@ const SignComponent = () => {
           );
           const signature = starknet.sign(felts_le);
 
-          setSigX(toBigIntLE(toBuffer(signature.get_r())));
-          setSigY(toBigIntLE(toBuffer(signature.get_s())));
+          setSigR(toBigIntLE(toBuffer(signature.get_r())));
+          setSigS(toBigIntLE(toBuffer(signature.get_s())));
         }}
       >
         Sign
@@ -179,12 +180,12 @@ const SignComponent = () => {
 };
 
 const SignatureDisplayComponent = () => {
-  const { sig_x, sig_y } = useSharedFormState();
+  const { sig_r, sig_s } = useSharedFormState();
 
   return (
     <div>
-      sig_x: {sig_x ? sig_x.toString() : ""} <br></br>
-      sig_y: {sig_y ? sig_y.toString() : ""} <br></br>
+      signature "r": {sig_r ? sig_r.toString() : ""} <br></br>
+      signature "s": {sig_s ? sig_s.toString() : ""} <br></br>
     </div>
   );
 };
