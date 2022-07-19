@@ -13,6 +13,7 @@ import { useBetween } from "use-between";
 
 import VerifySigAbi from "./abi/contract.json";
 import Erc20Abi from "./abi/erc20.json";
+import { randomBytes } from "crypto-browserify";
 
 import { starknet } from "./";
 
@@ -20,6 +21,10 @@ const BUFF_LEN = 32;
 
 function isNumeric(value) {
   return /^-?\d+$/.test(value);
+}
+
+function isHexadecimal(value) {
+  return /^[0-9a-f]+$/.test(value);
 }
 
 const useFormState = () => {
@@ -54,7 +59,7 @@ function SKGeneratorComponent() {
   return (
     <div>
       <button onClick={() => {
-        const private_key = 5n;
+        const private_key = toBigIntLE(randomBytes(31))
         starknet.load_sk(toBufferLE(private_key, BUFF_LEN));
         const pk = starknet.get_public_key()
         setPkX(toBigIntLE(toBuffer(pk.get_x())));
@@ -73,7 +78,7 @@ function KeyGeneration() {
       <h2>Step 1: Key Generation</h2>
       <SKGeneratorComponent />
       <PKDisplayComponent/>
-      <br></br>
+      <p>WARNING: these keys are produced with no security guarantees and should not be used outside of this demo.</p>
     </div>
   );
 }
@@ -82,11 +87,10 @@ function Signature() {
   return(
     <div id="signing_module">
       <h2>Step 2: Create and Sign a Message</h2> 
-      <p>Messages should be input as Cairo "felts" in hexadecimal representation.</p> 
+      <p>Messages should be input as Cairo "felts" in decimal representation.</p> 
         <MessageInputComponent/>
         <SignComponent></SignComponent>
         <SignatureDisplayComponent></SignatureDisplayComponent>
-        <br></br>
     </div>
   );
 }
@@ -134,7 +138,7 @@ const MessageInputComponent = () => {
           </td>
         ))}
         <div>
-          <input
+          <input id = "current-felt"
             onChange={(e) => {
               const input = e.target.value;
               setCurrentFelt(input);
@@ -146,6 +150,7 @@ const MessageInputComponent = () => {
                 setMessage([...message, currentFelt]);
                 setInputSize(inputSize + 1);
                 setFelts([...message, currentFelt]);
+                document.getElementById("current-felt").value = "";
               }
             }}
             disabled={!isNumeric(currentFelt)}

@@ -27,5 +27,8 @@ artifacts
 node.json
 
 # Benchmarks
-packages/www/hyperfine/hash/report
-packages/www/hyperfine/signature/report
+packages/argent-wasm/hyperfine/hash/report
+packages/argent-wasm/hyperfine/signature/report
+
+# UI
+**/dist/**
