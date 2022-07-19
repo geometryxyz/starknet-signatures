@@ -27,8 +27,8 @@ async def factory():
 
 
 @pytest.mark.asyncio
-async def test_verifier(factory):
-    _, verifier = factory
+async def test_verifier():
+    starknet, verifier = await setup()
 
     signer = Signer(0xbeef)
 
@@ -38,6 +38,5 @@ async def test_verifier(factory):
     (sig_r, sig_s) = signer.sign(msg_hash)
 
     await verifier.verify_sig(msg, signer.public_key, (sig_r, sig_s)).call()
-
-    verify_tx = await verifier.verify_signature(msg, signer.public_key, (sig_r, sig_s)).invoke()
+    await verifier.verify_signature(msg, signer.public_key, (sig_r, sig_s)).invoke()
 
