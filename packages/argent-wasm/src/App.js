@@ -28,7 +28,7 @@ const useFormState = () => {
 
 const useSharedFormState = () => useBetween(useFormState);
 
-const SKGeneratorComponent = () => {
+function SKGeneratorComponent() {
   const { setSecretKey, setPkX, setPkY } = useSharedFormState();
   return (
     <div>
@@ -40,8 +40,42 @@ const SKGeneratorComponent = () => {
         setPkY(toBigIntLE(toBuffer(pk.get_y())));
         setSecretKey(private_key)
       }}>
-        Generate new Private Key
+        Generate random key pair
       </button>
+    </div>
+  );
+}
+
+function KeyGeneration() {
+  return(
+    <div id="keygen_module">
+      <h2>Step 1: Key Generation</h2>
+      <SKGeneratorComponent />
+      <PKDisplayComponent/>
+      <br></br>
+    </div>
+  );
+}
+
+function Signature() {
+  return(
+    <div id="signing_module">
+      <h2>Step 2: Create and Sign a Message</h2> 
+      <p>Messages should be input as Cairo "felts" in hexadecimal representation.</p> 
+        <MessageInputComponent/>
+        <SignComponent></SignComponent>
+        <SignatureDisplayComponent></SignatureDisplayComponent>
+        <br></br>
+    </div>
+  );
+}
+
+function SubmitToStarkNet() {
+  return(
+    <div id="submission_module">
+        <h2>Step 3: Submit to StarkNet for Verification</h2>
+        <WalletComponent />
+        <AccComponent />
     </div>
   );
 }
@@ -58,7 +92,8 @@ const PKDisplayComponent = () => {
   )
 }
 
-const InputComponent = () => {
+
+const MessageInputComponent = () => {
   const { setFelts } = useSharedFormState();
 
   const [message, setMessage] = useState([]);
@@ -149,20 +184,16 @@ const AccComponent = () => {
     return <div>Active account: {account}</div>
 }
 
-const App = () => {
-    const connectors = getInstalledInjectedConnectors()
+function App() {
+  const connectors = getInstalledInjectedConnectors()
 
-    return (
-      <StarknetProvider connectors={connectors}>
-        <WalletComponent />
-        <AccComponent />
-        <SKGeneratorComponent/>
-        <PKDisplayComponent/>
-        <InputComponent/>
-        <SignComponent></SignComponent>
-        <SignatureDisplayComponent></SignatureDisplayComponent>
-      </StarknetProvider>
-    )
+  return (
+    <StarknetProvider connectors={connectors}>
+      <KeyGeneration />
+      <Signature />
+      <SubmitToStarkNet />
+    </StarknetProvider>
+  )
 }
 
 export default App;
