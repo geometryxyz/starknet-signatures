@@ -1,49 +1,49 @@
 [
-    {
-        "inputs": [
-            {
-                "name": "msg_len",
-                "type": "felt"
-            },
-            {
-                "name": "msg",
-                "type": "felt*"
-            },
-            {
-                "name": "signer_pubkey",
-                "type": "felt"
-            },
-            {
-                "name": "sig",
-                "type": "(felt, felt)"
-            }
-        ],
-        "name": "verify_sig",
-        "outputs": [],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "name": "msg_len",
-                "type": "felt"
-            },
-            {
-                "name": "msg",
-                "type": "felt*"
-            },
-            {
-                "name": "signer_pubkey",
-                "type": "felt"
-            },
-            {
-                "name": "sig",
-                "type": "(felt, felt)"
-            }
-        ],
-        "name": "verify_signature",
-        "outputs": [],
-        "type": "function"
-    }
+  {
+    "inputs": [
+      {
+        "name": "msg_len",
+        "type": "felt"
+      },
+      {
+        "name": "msg",
+        "type": "felt*"
+      },
+      {
+        "name": "signer_pubkey",
+        "type": "felt"
+      },
+      {
+        "name": "sig",
+        "type": "(felt, felt)"
+      }
+    ],
+    "name": "verify_sig",
+    "outputs": [],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "name": "msg_len",
+        "type": "felt"
+      },
+      {
+        "name": "msg",
+        "type": "felt*"
+      },
+      {
+        "name": "signer_pubkey",
+        "type": "felt"
+      },
+      {
+        "name": "sig",
+        "type": "(felt, felt)"
+      }
+    ],
+    "name": "verify_signature",
+    "outputs": [],
+    "type": "function"
+  }
 ]

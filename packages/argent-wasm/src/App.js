@@ -8,10 +8,11 @@ import {
 } from "@starknet-react/core";
 import { toBufferLE, toBigIntLE } from "bigint-buffer";
 import * as toBuffer from "typedarray-to-buffer";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useBetween } from "use-between";
 
 import VerifySigAbi from "./abi/contract.json";
+import Erc20Abi from "./abi/erc20.json";
 
 import { starknet } from "./";
 
@@ -202,6 +203,24 @@ const VerifySignatureComponent = () => {
   );
 };
 
+const FaucetComponent = () => {
+  // const { account } = useStarknet();
+  // const token = useContract({
+  //   abi: Erc20Abi,
+  //   address:
+  //     "0x07394cbe418daa16e42b87ba67372d4ab4a5df0b05c6e554d158458ce245bc10",
+  // });
+  // const { data, loading, error, refresh } = useStarknetCall({
+  //   contract: token,
+  //   method: balanceOf,
+  //   args: [account],
+  // });
+
+  // const [balance, setBalance] = useState("");
+
+  return <a href="https://faucet.goerli.starknet.io/#">Request testnet eth</a>;
+};
+
 const AccComponent = () => {
   const { account } = useStarknet();
 
@@ -220,6 +239,7 @@ const App = () => {
       <InputComponent />
       <SignComponent></SignComponent>
       <SignatureDisplayComponent />
+      <FaucetComponent />
       <VerifySignatureComponent />
     </StarknetProvider>
   );
