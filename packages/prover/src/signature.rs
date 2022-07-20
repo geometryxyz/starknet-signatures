@@ -111,7 +111,7 @@ mod tests {
     use super::{parameters, private_key_to_public_key, sign, Signature, SigningParameters};
     use crate::pedersen::compute_hash_on_elements;
     use ark_ec::{AffineCurve, ProjectiveCurve};
-    use ark_ff::{field_new, Field, PrimeField};
+    use ark_ff::{Field, PrimeField};
     use ark_std::UniformRand;
     use rand::thread_rng;
     use starknet::{
