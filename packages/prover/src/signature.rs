@@ -111,7 +111,7 @@ mod tests {
     use super::{parameters, private_key_to_public_key, sign, Signature, SigningParameters};
     use crate::pedersen::compute_hash_on_elements;
     use ark_ec::{AffineCurve, ProjectiveCurve};
-    use ark_ff::{Field, PrimeField, field_new};
+    use ark_ff::{field_new, Field, PrimeField};
     use ark_std::UniformRand;
     use rand::thread_rng;
     use starknet::{
@@ -154,17 +154,12 @@ mod tests {
         let parameters = parameters();
 
         let private_key = Fr::rand(rng);
-        let private_key = Fr::from(10 as u64);
-        // let private_key = field_new!(Fr, "172882690830337988349958037368858324155537522255755900471757931013892417958");
         let public_key = private_key_to_public_key(&parameters, private_key).into_affine();
 
         println!("pk x: {}", public_key.x);
         println!("pk y: {}", public_key.y);
 
-
-        let msg = vec![
-            Fq::from(10u64),
-        ];
+        let msg = vec![Fq::rand(rng), Fq::rand(rng), Fq::rand(rng)];
 
         let msg_hash = compute_hash_on_elements(&msg).unwrap();
         let sig = sign(&parameters, private_key, msg_hash, None).unwrap();
@@ -174,8 +169,8 @@ mod tests {
             verify_signature(&parameters, &public_key, &msg_hash, &sig)
         );
 
-        println!("sig r: {}", sig.r); //604545849778525062457762543482147741588851271534277738208145578562194622620
-        println!("sig s: {}", sig.s); //1005023245858433631958764350290981577571376768099078396745908094681410828614
+        println!("sig r: {}", sig.r);
+        println!("sig s: {}", sig.s);
 
         let sig_verification_contract_address = FieldElement::from_hex_be(
             "04b7e9f16515962136d9836af263840146214e8df1a6d841fed055b00d9d8df6",
@@ -191,8 +186,8 @@ mod tests {
             FieldElement::from_mont([msg.len() as u64, 0, 0, 0]),
             //msg elements
             FieldElement::from_hex_be(msg[0].0.to_string().as_str()).unwrap(),
-            // FieldElement::from_hex_be(msg[3].0.to_string().as_str()).unwrap(),
-            // FieldElement::from_hex_be(msg[4].0.to_string().as_str()).unwrap(),
+            FieldElement::from_hex_be(msg[1].0.to_string().as_str()).unwrap(),
+            FieldElement::from_hex_be(msg[2].0.to_string().as_str()).unwrap(),
             // public key x
             public_key_x,
             //r
