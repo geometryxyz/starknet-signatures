@@ -60,8 +60,8 @@ function SKGeneratorComponent() {
   return (
     <div>
       <button onClick={() => {
-        // const private_key = toBigIntLE(randomBytes(31))
-        const private_key = 10n;
+        const private_key = toBigIntLE(randomBytes(31))
+        // const private_key = 10n;
         starknet.load_sk(toBufferLE(private_key, BUFF_LEN));
         const pk = starknet.get_public_key()
         setPkX(toBigIntLE(toBuffer(pk.get_x())));
@@ -101,7 +101,7 @@ function SubmitToStarkNet() {
   return(
     <div id="submission_module">
         <h2>Step 3: Submit to StarkNet for Verification</h2>
-        <p>The <a href="https://goerli.voyager.online/contract/0x026c8bc8bf071a54c4b0713ad52715fe92a471f85bf7f224322cbb0a29666ce1#transactions">verification contract</a> is deployed to StarkNet on the Goerli testnet. You can read the source code here</p>
+        <p>The <a href="https://goerli.voyager.online/contract/0x026c8bc8bf071a54c4b0713ad52715fe92a471f85bf7f224322cbb0a29666ce1#transactions">verification contract</a> is deployed to StarkNet on the Goerli testnet. Please make sure that you have some testnetETH in your account. If needed you can request some here <a href="https://faucet.goerli.starknet.io/">https://faucet.goerli.starknet.io/</a></p>
         <WalletComponent />
         <AccComponent />
     </div>
@@ -226,67 +226,25 @@ const VerifySignatureComponent = () => {
     const method = "verify_signature";
     // const method = "verify_sig";
 
-
     const onClick = async () => {
       const deployedContract = await contract.contract.deployed();
-      // console.log("Deployed contract", deployedContract)
-
-      // console.log(Array.isArray([1n, 1n, 1n]));
-
       const tx_response = await deployedContract.invoke(
         method, 
         [feltsToSign, public_key_x.toString(), [sig_r.toString(), sig_s.toString()]],
         { maxFee: 5000000000 }
       );
 
-      // console.log(tx_response);
+      console.log(tx_response);
 
     }
 
-    // disabled={!sig_r && !sig_s}
+    const { account } = useStarknet();
     return (
-      <button onClick={onClick} >
-        Verify on starknet
+      <button onClick={onClick} disabled={!sig_r && !sig_s && !account}>
+        Verify on StarkNet
       </button>
     );
 }
-
-// const VerifySignatureComponent = () => {
-//   const contractAddress =
-//     "0x026c8bc8bf071a54c4b0713ad52715fe92a471f85bf7f224322cbb0a29666ce1";
-//   const contract = useContract({
-//     abi: VerifySigAbi,
-//     address: contractAddress,
-//   });
-
-//   const method = "verify_signature";
-//   const starknetInvocation = useStarknetInvoke({
-//     contract,
-//     method,
-//   });
-//   const { sig_r, sig_s, feltsToSign, public_key_x } = useSharedFormState();
-
-//   // console.log(starknetInvocation);
-
-//   const { invoke } = starknetInvocation;
-
-//   const onClick = async () => {
-//     invoke({
-//       args: [feltsToSign, public_key_x, [sig_r, sig_s]],
-//       metadata: {
-//         method: "verifySignature",
-//         message: "verifying signature",
-//       },
-//     })
-//     // const deployedContract = await contract.contract.deployed();
-//     // console.log("Contract is deployed: ", deployedContract);
-//   };
-//     return (
-//     <button onClick={onClick} disabled={!sig_r && !sig_s}>
-//       Verify on starknet
-//     </button>
-//   );
-// };
 
 const FaucetComponent = () => {
   // const { account } = useStarknet();
@@ -308,6 +266,9 @@ const FaucetComponent = () => {
 
 const AccComponent = () => {
   const { account } = useStarknet();
+  
+  // const { setAccount } = useSharedFormState();
+  // setAccount(account);
 
   return <div>Active account: {account}</div>;
 };
