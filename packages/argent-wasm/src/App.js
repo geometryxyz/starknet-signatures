@@ -14,6 +14,7 @@ import { useBetween } from "use-between";
 import VerifySigAbi from "./abi/contract.json";
 import Erc20Abi from "./abi/erc20.json";
 import { randomBytes } from "crypto-browserify";
+const BN = require('bn.js');
 
 import { starknet } from "./";
 
@@ -59,7 +60,8 @@ function SKGeneratorComponent() {
   return (
     <div>
       <button onClick={() => {
-        const private_key = toBigIntLE(randomBytes(31))
+        // const private_key = toBigIntLE(randomBytes(31))
+        const private_key = 10n;
         starknet.load_sk(toBufferLE(private_key, BUFF_LEN));
         const pk = starknet.get_public_key()
         setPkX(toBigIntLE(toBuffer(pk.get_x())));
@@ -163,6 +165,7 @@ const MessageInputComponent = () => {
   );
 };
 
+
 const SignComponent = () => {
   const { feltsToSign, setSigR, setSigS } = useSharedFormState();
   return (
@@ -170,7 +173,7 @@ const SignComponent = () => {
       <button
         onClick={() => {
           const felts_le = feltsToSign.map((felt) =>
-            toBufferLE(felt, BUFF_LEN)
+            toBufferLE(new BN(felt, 10), BUFF_LEN)
           );
           const signature = starknet.sign(felts_le);
 
@@ -211,36 +214,79 @@ const WalletComponent = () => {
 };
 
 const VerifySignatureComponent = () => {
-  const contractAddress =
-    "0x026c8bc8bf071a54c4b0713ad52715fe92a471f85bf7f224322cbb0a29666ce1";
-  const contract = useContract({
-    abi: VerifySigAbi,
-    address: contractAddress,
-  });
-  const method = "verify_signature";
-  const { invoke } = useStarknetInvoke({
-    contract,
-    method,
-  });
-  const { sig_x, sig_y, feltsToSign, public_key_x } = useSharedFormState();
-
-  const onClick = async () => {
-    const res = await invoke({
-      args: [feltsToSign.length, ...feltsToSign, public_key_x, [sig_x, sig_y]],
-      metadata: {
-        method: "verifySignature",
-        message: "verifying signature",
-      },
+    const contractAddress =
+      "0x026c8bc8bf071a54c4b0713ad52715fe92a471f85bf7f224322cbb0a29666ce1";
+    const contract = useContract({
+      abi: VerifySigAbi,
+      address: contractAddress,
     });
-    console.log(res);
-  };
 
-  return (
-    <button onClick={onClick} disabled={!sig_x && !sig_y}>
-      Verify on starknet
-    </button>
-  );
-};
+    const { sig_r, sig_s, feltsToSign, public_key_x } = useSharedFormState();
+
+    const method = "verify_signature";
+    // const method = "verify_sig";
+
+
+    const onClick = async () => {
+      const deployedContract = await contract.contract.deployed();
+      // console.log("Deployed contract", deployedContract)
+
+      // console.log(Array.isArray([1n, 1n, 1n]));
+
+      const tx_response = await deployedContract.invoke(
+        method, 
+        [feltsToSign, public_key_x.toString(), [sig_r.toString(), sig_s.toString()]],
+        { maxFee: 5000000000 }
+      );
+
+      // console.log(tx_response);
+
+    }
+
+    // disabled={!sig_r && !sig_s}
+    return (
+      <button onClick={onClick} >
+        Verify on starknet
+      </button>
+    );
+}
+
+// const VerifySignatureComponent = () => {
+//   const contractAddress =
+//     "0x026c8bc8bf071a54c4b0713ad52715fe92a471f85bf7f224322cbb0a29666ce1";
+//   const contract = useContract({
+//     abi: VerifySigAbi,
+//     address: contractAddress,
+//   });
+
+//   const method = "verify_signature";
+//   const starknetInvocation = useStarknetInvoke({
+//     contract,
+//     method,
+//   });
+//   const { sig_r, sig_s, feltsToSign, public_key_x } = useSharedFormState();
+
+//   // console.log(starknetInvocation);
+
+//   const { invoke } = starknetInvocation;
+
+//   const onClick = async () => {
+//     invoke({
+//       args: [feltsToSign, public_key_x, [sig_r, sig_s]],
+//       metadata: {
+//         method: "verifySignature",
+//         message: "verifying signature",
+//       },
+//     })
+//     // const deployedContract = await contract.contract.deployed();
+//     // console.log("Contract is deployed: ", deployedContract);
+//   };
+//     return (
+//     <button onClick={onClick} disabled={!sig_r && !sig_s}>
+//       Verify on starknet
+//     </button>
+//   );
+// };
 
 const FaucetComponent = () => {
   // const { account } = useStarknet();
@@ -274,6 +320,7 @@ function App() {
       <KeyGeneration />
       <Signature />
       <SubmitToStarkNet />
+      <VerifySignatureComponent />
     </StarknetProvider>
   )
 }
