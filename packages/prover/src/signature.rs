@@ -156,13 +156,10 @@ mod tests {
         let private_key = Fr::rand(rng);
         let public_key = private_key_to_public_key(&parameters, private_key).into_affine();
 
-        let msg = vec![
-            Fq::from(1u64),
-            Fq::from(2u64),
-            Fq::from(3u64),
-            Fq::from(4u64),
-            Fq::from(5u64),
-        ];
+        println!("pk x: {}", public_key.x);
+        println!("pk y: {}", public_key.y);
+
+        let msg = vec![Fq::rand(rng), Fq::rand(rng), Fq::rand(rng)];
 
         let msg_hash = compute_hash_on_elements(&msg).unwrap();
         let sig = sign(&parameters, private_key, msg_hash, None).unwrap();
@@ -171,6 +168,9 @@ mod tests {
             true,
             verify_signature(&parameters, &public_key, &msg_hash, &sig)
         );
+
+        println!("sig r: {}", sig.r);
+        println!("sig s: {}", sig.s);
 
         let sig_verification_contract_address = FieldElement::from_hex_be(
             "04b7e9f16515962136d9836af263840146214e8df1a6d841fed055b00d9d8df6",
@@ -188,8 +188,6 @@ mod tests {
             FieldElement::from_hex_be(msg[0].0.to_string().as_str()).unwrap(),
             FieldElement::from_hex_be(msg[1].0.to_string().as_str()).unwrap(),
             FieldElement::from_hex_be(msg[2].0.to_string().as_str()).unwrap(),
-            FieldElement::from_hex_be(msg[3].0.to_string().as_str()).unwrap(),
-            FieldElement::from_hex_be(msg[4].0.to_string().as_str()).unwrap(),
             // public key x
             public_key_x,
             //r

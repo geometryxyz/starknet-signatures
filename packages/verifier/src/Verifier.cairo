@@ -29,3 +29,20 @@ func verify_sig{
     return ()
 end
 
+@external
+func verify_signature{
+    syscall_ptr : felt*,
+    pedersen_ptr : HashBuiltin*,
+    range_check_ptr,
+    ecdsa_ptr : SignatureBuiltin*,
+}(msg_len: felt, msg: felt*, signer_pubkey: felt, sig : (felt, felt)):
+    let (msg_hash) = hash_felts{hash_ptr=pedersen_ptr}(msg, msg_len)
+    verify_ecdsa_signature(
+        message=msg_hash,
+        public_key=signer_pubkey,
+        signature_r=sig[0],
+        signature_s=sig[1],
+    )
+    return ()
+end
+
